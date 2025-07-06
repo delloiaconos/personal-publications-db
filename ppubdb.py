@@ -1,4 +1,5 @@
 import sqlite3
+import requests
 
 def create_database(dbcon):
     dbcur = dbcon.cursor()
@@ -15,6 +16,25 @@ def create_database(dbcon):
             if dbcon.commit():
                 print("Database created successfully.") 
 
+def fetch_publication_from_doi( doi, category='DOC'):
+    url = "http://dx.doi.org/" + doi
+    headers = { 'Accept': 'application/json' }
+    response = requests.get(url, headers=headers)
+
+    if response.status_code != 200:
+        print(f"Failed to fetch data: {response.status_code}")
+        return None
+
+    data = response.json()
+    if 'title' not in data or 'author' not in data:
+        print("Invalid data format received.")
+        return None
+
+    dbcur = dbcon.cursor()
+    dbcur.execute("INSERT INTO Documents (Title, Category) VALUES (?, ?)", (data['title'], category))
+    dbcon.commit()
+    print("Publication added successfully.")
+
 if __name__ == "__main__":
     # Connect to the SQLite database (or create it if it doesn't exist)
     dbcon = sqlite3.connect('publications.db')
@@ -23,5 +43,5 @@ if __name__ == "__main__":
     dbcur = dbcon.cursor()
 
     create_database(dbcon)
-        
+    fetch_publication_from_doi("10.1007/978-3-030-37558-4_50")
     dbcon.close()    
