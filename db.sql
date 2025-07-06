@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS "Documents" (
 	"idDocument"	INTEGER NOT NULL UNIQUE,
 	"Title"	BLOB NOT NULL,
 	"Category"	TEXT NOT NULL,
+	"Container" TEXT NOT NULL,
 	PRIMARY KEY("idDocument" AUTOINCREMENT)
 );
 COMMIT;
