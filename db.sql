@@ -7,8 +7,8 @@ CREATE TABLE IF NOT EXISTS "AuthorIdentifiers" (
 CREATE TABLE IF NOT EXISTS "Authors" (
 	"idAuthor"	INTEGER NOT NULL UNIQUE,
 	"FirstName"	TEXT NOT NULL,
-	"SecondName"	TEXT NOT NULL,
-	"MiddelName"	TEXT,
+	"LastName"	TEXT NOT NULL,
+	"MiddleName"	TEXT,
 	PRIMARY KEY("idAuthor" AUTOINCREMENT),
 	CONSTRAINT "fkAuthodsId_idAutor" FOREIGN KEY("idAuthor") REFERENCES "Authors"("idAuthor")
 );
