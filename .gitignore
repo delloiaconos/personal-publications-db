@@ -213,3 +213,4 @@ venv/
 env/
 .env/
 
+publications.db
