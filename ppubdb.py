@@ -32,6 +32,14 @@ def fetch_publication_from_doi( doi, category='DOC'):
 
     dbcur = dbcon.cursor()
     dbcur.execute("INSERT INTO Documents (Title, Category) VALUES (?, ?)", (data['title'], category))
+    
+    dbcur.execute("SELECT last_insert_rowid()" )
+    idDoc = dbcur.fetchone()[0]
+    if not idDoc:
+        print("Failed to retrieve document ID.")
+        return None 
+    dbcur.execute("INSERT INTO DocumentIdentifiers (idDocument, IdentifierType, DocumentIdentifier) VALUES (?, 'DOI', ?)", (idDoc, doi))
+    
     dbcon.commit()
     print("Publication added successfully.")
 
