@@ -21,13 +21,13 @@ CREATE TABLE IF NOT EXISTS "DocumentAuthors" (
 CREATE TABLE IF NOT EXISTS "DocumentIdentifiers" (
 	"idDocument"	INTEGER NOT NULL,
 	"IdentifierType"	TEXT NOT NULL,
-	"DocuemnttIdentifier"	TEXT NOT NULL UNIQUE,
+	"DocumentIdentifier"	TEXT NOT NULL UNIQUE,
 	CONSTRAINT "fkDocIde_idDoc" FOREIGN KEY("idDocument") REFERENCES ""
 );
 CREATE TABLE IF NOT EXISTS "Documents" (
 	"idDocument"	INTEGER NOT NULL UNIQUE,
 	"Title"	BLOB NOT NULL,
-	"DocumentType"	TEXT NOT NULL,
+	"Category"	TEXT NOT NULL,
 	PRIMARY KEY("idDocument" AUTOINCREMENT)
 );
 COMMIT;
