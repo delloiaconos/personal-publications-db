@@ -26,12 +26,12 @@ def fetch_publication_from_doi( doi, category='DOC'):
         return None
 
     data = response.json()
-    if 'title' not in data or 'author' not in data:
+    if not all(key in data for key in ('title', 'author', 'container-title')):
         print("Invalid data format received.")
         return None
 
     dbcur = dbcon.cursor()
-    dbcur.execute("INSERT INTO Documents (Title, Category) VALUES (?, ?)", (data['title'], category))
+    dbcur.execute("INSERT INTO Documents (Title, Category, Container) VALUES (?, ?, ?)", (data['title'], category, data['container-title']))
     
     idDoc = dbcur.lastrowid
     if not idDoc:
