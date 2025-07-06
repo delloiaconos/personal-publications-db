@@ -33,13 +33,25 @@ def fetch_publication_from_doi( doi, category='DOC'):
     dbcur = dbcon.cursor()
     dbcur.execute("INSERT INTO Documents (Title, Category) VALUES (?, ?)", (data['title'], category))
     
-    dbcur.execute("SELECT last_insert_rowid()" )
-    idDoc = dbcur.fetchone()[0]
+    idDoc = dbcur.lastrowid
     if not idDoc:
         print("Failed to retrieve document ID.")
         return None 
     dbcur.execute("INSERT INTO DocumentIdentifiers (idDocument, IdentifierType, DocumentIdentifier) VALUES (?, 'DOI', ?)", (idDoc, doi))
     
+    for order, author in enumerate( data['author'] ):
+        firstName = author.get('given', '')
+        lastName = author.get('family', '')
+
+        dbcur.execute("SELECT idAuthor FROM Authors WHERE FirstName = ? AND LastName = ?", (firstName, lastName))
+        idAuth = dbcur.fetchone()
+        if idAuth:
+            idAuth = idAuth[0]
+        else:
+            dbcur.execute("INSERT INTO Authors (FirstName, LastName) VALUES (?, ?)", (firstName, lastName))
+            idAuth = dbcur.lastrowid
+        
+        dbcur.execute("INSERT INTO DocumentAuthors (idDocument, idAuthor, AuthOrder) VALUES (?, ?, ?)", (idDoc, idAuth, order))
     dbcon.commit()
     print("Publication added successfully.")
 
@@ -52,4 +64,5 @@ if __name__ == "__main__":
 
     create_database(dbcon)
     fetch_publication_from_doi("10.1007/978-3-030-37558-4_50")
+    fetch_publication_from_doi("10.1007/978-3-030-37558-4_51")
     dbcon.close()    
