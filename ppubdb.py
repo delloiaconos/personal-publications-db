@@ -11,15 +11,15 @@ def ppdb():
 
 @ppdb.command(name='db-init')
 @click.option(
-    "--name", "fName",
+    "--name", "dbname",
     default="publications.db",
     type=click.Path(exists=False),
     help="Database name.",
 
 )
-def dbi_init(fName):
+def dbi_init(dbname):
     """Instanciate a new database."""
-    dbcon = sqlite3.connect(fName)
+    dbcon = sqlite3.connect(dbname)
     dbcur = dbcon.cursor()
     with open( 'db.sql', 'r') as f:
         sql_script = f.read()
@@ -38,12 +38,12 @@ def dbi_init(fName):
 
 @ppdb.command(name='db-prune')
 @click.option(
-    "--name", "fName",
+    "--name", "dbname",
     default="publications.db",
     type=click.Path(exists=True),
     help="Database name.",
 )
-def dbi_prune(fName):
+def dbi_prune(dbname):
     """Prune the database."""
     pass
 
@@ -59,12 +59,12 @@ def dbi_prune(fName):
     default="DOCUMENT",
 )
 @click.option(
-    "--name", "fName",
+    "--name", "dbname",
     default="publications.db",
     type=click.Path(exists=True),
     help="Database name.",
 )
-def doc_add_from_doi( doi:str, category:str, fName:str):
+def doc_add_from_doi( doi:str, category:str, dbname:str):
     """Add a document using its DOI."""
     url = "http://dx.doi.org/" + doi
     headers = { 'Accept': 'application/json' }
@@ -80,7 +80,7 @@ def doc_add_from_doi( doi:str, category:str, fName:str):
         print("Invalid data format received.")
         return None
 
-    dbcon = sqlite3.connect(fName)
+    dbcon = sqlite3.connect(dbname)
     dbcur = dbcon.cursor()
     dbcur.execute("INSERT INTO Documents (Title, Category, Container) VALUES (?, ?, ?)", (data['title'], category, data['container-title']))
     
@@ -119,15 +119,15 @@ def doc_add_from_doi( doi:str, category:str, fName:str):
     nargs=-1,
 )
 @click.option(
-    "--name", "fName",
+    "--name", "dbname",
     default="publications.db",
     type=click.Path(exists=True),
     help="Database name.",
 )
-def author_collapse( idauthor:int, ids:list, fName:str):
+def author_collapse( idauthor:int, ids:list, dbname:str):
     """Collapse multiple authors to a single one, it only replaces the author in documents and deletes the collapsed."""
     try:
-        dbcon = sqlite3.connect(fName)
+        dbcon = sqlite3.connect(dbname)
         dbcur = dbcon.cursor()
 
         for idb in ids:
@@ -145,15 +145,15 @@ def author_collapse( idauthor:int, ids:list, fName:str):
 
 @ppdb.command(name='auth-list')
 @click.option(
-    "--name", "fName",
+    "--name", "dbname",
     default="publications.db",
     type=click.Path(exists=True),
     help="Database name.",
 )
-def authors_list( fName:str):
+def authors_list( dbname:str):
     """List all the authors with their IDs."""
     try:
-        dbcon = sqlite3.connect(fName)
+        dbcon = sqlite3.connect(dbname)
         dbcur = dbcon.cursor()
         
         dbcur.execute("SELECT idAuthor, FirstName, LastName, MiddleName FROM Authors" )
@@ -168,15 +168,15 @@ def authors_list( fName:str):
 
 @ppdb.command(name='doc-list')
 @click.option(
-    "--name", "fName",
+    "--name", "dbname",
     default="publications.db",
     type=click.Path(exists=True),
     help="Database name.",
 )
-def doc_list( fName:str):
+def doc_list( dbname:str):
     """List all the authors with their IDs."""
     try:
-        dbcon = sqlite3.connect(fName)
+        dbcon = sqlite3.connect(dbname)
         dbcur = dbcon.cursor()
         
         dbcur.execute("SELECT idDocument, Category, Title, Container FROM Documents ORDER BY Category" )
