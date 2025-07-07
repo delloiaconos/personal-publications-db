@@ -9,7 +9,7 @@ def ppdb():
     pass
 
 
-@ppdb.command(name='dbinit')
+@ppdb.command(name='db-init')
 @click.option(
     "--name", "fName",
     default="publications.db",
@@ -36,7 +36,7 @@ def dbi_init(fName):
             dbcon.close()
 
 
-@ppdb.command(name='dbprune')
+@ppdb.command(name='db-prune')
 @click.option(
     "--name", "fName",
     default="publications.db",
@@ -47,7 +47,7 @@ def dbi_prune(fName):
     """Prune the database."""
     pass
 
-@ppdb.command(name='add-from-doi')
+@ppdb.command(name='doc-from-doi')
 @click.argument(
     'doi', 
     nargs=1,
@@ -65,6 +65,7 @@ def dbi_prune(fName):
     help="Database name.",
 )
 def doc_add_from_doi( doi:str, category:str, fName:str):
+    """Add a document using its DOI."""
     url = "http://dx.doi.org/" + doi
     headers = { 'Accept': 'application/json' }
     response = requests.get(url, headers=headers)
@@ -106,6 +107,41 @@ def doc_add_from_doi( doi:str, category:str, fName:str):
     print("Publication added successfully.")
 
     dbcon.close()
+
+@ppdb.command(name='auth-collapse')
+@click.argument(
+    'idauthor',
+    nargs=1,
+    type=click.INT
+)
+@click.argument(
+    'ids',
+    nargs=-1,
+)
+@click.option(
+    "--name", "fName",
+    default="publications.db",
+    type=click.Path(exists=True),
+    help="Database name.",
+)
+def author_collapse( idauthor:int, ids:list, fName:str):
+    """Collapse multiple authors to a single one, it only replaces the author in documents and deletes the collapsed."""
+    try:
+        dbcon = sqlite3.connect(fName)
+        dbcur = dbcon.cursor()
+        
+        for idb in ids:
+            dbcur.execute("UPDATE OR IGNORE DocumentAuthors SET idAuthor=? WHERE idAuthor=?", (idauthor, idb))
+        dbcon.commit()
+
+        for idb in ids:
+            dbcur.execute("DELETE FROM Authors WHERE idAuthor=?", (idb,) )
+        dbcon.commit()
+
+        print("Authors collapsed succesfully.")
+        dbcon.close()
+    except sqlite3.OperationalError as e:
+        print(e)
 
 if __name__ == "__main__":
     ppdb()
