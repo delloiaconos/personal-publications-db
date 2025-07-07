@@ -2,7 +2,24 @@ import sqlite3
 import requests
 import click
 
-def create_database(dbcon):
+
+@click.group()
+def ppdb():
+    """Personal Publications Database CLI"""
+    pass
+
+
+@ppdb.command(name='dbinit')
+@click.option(
+    "--name", "fName",
+    default="publications.db",
+    type=click.Path(exists=False),
+    help="Database name.",
+
+)
+def dbi_init(fName):
+    """Instanciate a new database."""
+    dbcon = sqlite3.connect(fName)
     dbcur = dbcon.cursor()
     with open( 'db.sql', 'r') as f:
         sql_script = f.read()
@@ -16,12 +33,43 @@ def create_database(dbcon):
         finally:
             if dbcon.commit():
                 print("Database created successfully.") 
+            dbcon.close()
 
-def fetch_publication_from_doi( doi, category='DOC'):
+
+@ppdb.command(name='dbprune')
+@click.option(
+    "--name", "fName",
+    default="publications.db",
+    type=click.Path(exists=True),
+    help="Database name.",
+)
+def dbi_prune(fName):
+    """Prune the database."""
+    pass
+
+@ppdb.command(name='add-from-doi')
+@click.argument(
+    'doi', 
+    nargs=1,
+    type=click.STRING,
+)
+@click.argument(
+    'category',
+    type=click.STRING,
+    default="DOCUMENT",
+)
+@click.option(
+    "--name", "fName",
+    default="publications.db",
+    type=click.Path(exists=True),
+    help="Database name.",
+)
+def doc_add_from_doi( doi:str, category:str, fName:str):
     url = "http://dx.doi.org/" + doi
     headers = { 'Accept': 'application/json' }
     response = requests.get(url, headers=headers)
 
+    
     if response.status_code != 200:
         print(f"Failed to fetch data: {response.status_code}")
         return None
@@ -31,6 +79,7 @@ def fetch_publication_from_doi( doi, category='DOC'):
         print("Invalid data format received.")
         return None
 
+    dbcon = sqlite3.connect(fName)
     dbcur = dbcon.cursor()
     dbcur.execute("INSERT INTO Documents (Title, Category, Container) VALUES (?, ?, ?)", (data['title'], category, data['container-title']))
     
@@ -56,14 +105,9 @@ def fetch_publication_from_doi( doi, category='DOC'):
     dbcon.commit()
     print("Publication added successfully.")
 
-if __name__ == "__main__":
-    # Connect to the SQLite database (or create it if it doesn't exist)
-    dbcon = sqlite3.connect('publications.db')
-    
-    # Create a cursor object to interact with the database
-    dbcur = dbcon.cursor()
+    dbcon.close()
 
-    create_database(dbcon)
-    fetch_publication_from_doi("10.1007/978-3-030-37558-4_50")
-    fetch_publication_from_doi("10.1007/978-3-030-37558-4_51")
-    dbcon.close()    
+if __name__ == "__main__":
+    ppdb()
+    click
+        
