@@ -160,12 +160,34 @@ def authors_list( fName:str):
         rows = dbcur.fetchall()
 
         for r in rows:
-            print( f"[{r[0]:02d}] {r[2]}, {r[1]}" )    
+            print( f"""[{r[0]:02d}] {r[2]}, {r[1]}""" )    
 
         dbcon.close()
     except sqlite3.OperationalError as e:
         print(e)
 
+@ppdb.command(name='doc-list')
+@click.option(
+    "--name", "fName",
+    default="publications.db",
+    type=click.Path(exists=True),
+    help="Database name.",
+)
+def doc_list( fName:str):
+    """List all the authors with their IDs."""
+    try:
+        dbcon = sqlite3.connect(fName)
+        dbcur = dbcon.cursor()
+        
+        dbcur.execute("SELECT idDocument, Category, Title, Container FROM Documents ORDER BY Category" )
+        rows = dbcur.fetchall()
+
+        for r in rows:
+            print( f"""[{r[0]:02d}] "{r[2]}", in {r[3]}""" )    
+
+        dbcon.close()
+    except sqlite3.OperationalError as e:
+        print(e)
 
 if __name__ == "__main__":
     ppdb()
