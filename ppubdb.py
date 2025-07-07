@@ -129,7 +129,7 @@ def author_collapse( idauthor:int, ids:list, fName:str):
     try:
         dbcon = sqlite3.connect(fName)
         dbcur = dbcon.cursor()
-        
+
         for idb in ids:
             dbcur.execute("UPDATE OR IGNORE DocumentAuthors SET idAuthor=? WHERE idAuthor=?", (idauthor, idb))
         dbcon.commit()
@@ -142,6 +142,30 @@ def author_collapse( idauthor:int, ids:list, fName:str):
         dbcon.close()
     except sqlite3.OperationalError as e:
         print(e)
+
+@ppdb.command(name='auth-list')
+@click.option(
+    "--name", "fName",
+    default="publications.db",
+    type=click.Path(exists=True),
+    help="Database name.",
+)
+def authors_list( fName:str):
+    """List all the authors with their IDs."""
+    try:
+        dbcon = sqlite3.connect(fName)
+        dbcur = dbcon.cursor()
+        
+        dbcur.execute("SELECT idAuthor, FirstName, LastName, MiddleName FROM Authors" )
+        rows = dbcur.fetchall()
+
+        for r in rows:
+            print( f"[{r[0]:02d}] {r[2]}, {r[1]}" )    
+
+        dbcon.close()
+    except sqlite3.OperationalError as e:
+        print(e)
+
 
 if __name__ == "__main__":
     ppdb()
