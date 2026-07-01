@@ -6,6 +6,8 @@ _Personal Publication DB_ is a small Python command-line utility for managing yo
 
 The project is designed around a simple idea: a publication list is personal. DOI metadata is useful, but it is not always exactly how you want your name, your co-authors, unpublished works, or custom categories to appear in a CV, personal website, GitHub profile, academic page, or other publication output.
 
+Design notes and usage can be found in [NOTES](NOTES.MD).
+
 ### Motivation
 
 This project was created to solve a personal but common problem: author names are sometimes misspelled, formatted inconsistently, or represented differently across publication databases. For example, a DOI record may contain a version of your name that is technically valid but not the one you want to display on your curriculum vitae, website, or personal academic profile.
@@ -64,4 +66,35 @@ The long-term goal is to generate publication lists from the SQLite database usi
 - an HTML block for a personal website;
 - custom formats for grants, reports, or institutional pages.
 
+## License
+
+This project is licensed under the **GNU General Public License Version 3, 29 June 2007**.
+
+See the [LICENSE](./LICENSE) file for the full license text.
+
+## Contributing
+
+Contributions are welcome.
+
+You can contribute by:
+
+- reporting bugs or unexpected behavior;
+- suggesting new features or improvements;
+- improving the documentation;
+- adding tests;
+- improving the CLI commands;
+- extending DOI metadata handling;
+- creating or improving Jinja2 templates for publication export.
+
+Before submitting a contribution, please open an issue or discussion to describe the proposed change, especially for larger modifications.
+
+To contribute code:
+
+1. Fork the repository.
+2. Create a dedicated branch for your changes.
+3. Make your changes with clear and focused commits.
+4. Test your changes locally.
+5. Open a pull request describing what was changed and why.
+
+Please keep contributions aligned with the goal of the project: a simple, personal, local, and customizable publication database.
 
