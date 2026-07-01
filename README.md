@@ -6,6 +6,8 @@ _Personal Publication DB_ is a small Python command-line utility for managing yo
 
 The project is designed around a simple idea: a publication list is personal. DOI metadata is useful, but it is not always exactly how you want your name, your co-authors, unpublished works, or custom categories to appear in a CV, personal website, GitHub profile, academic page, or other publication output.
 
+Installation, references, usage notes can be found in [USAGE](USAGE.MD).
+
 Design notes and usage can be found in [NOTES](NOTES.MD).
 
 ### Motivation
