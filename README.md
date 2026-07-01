@@ -100,3 +100,17 @@ Please keep contributions aligned with the goal of the project: a simple, person
 This project is licensed under the **GNU General Public License Version 3, 29 June 2007**.
 
 See the [LICENSE](./LICENSE) file for the full license text.
+
+## Credits
+
+This project uses the DOI resolver service available at [https://doi.org](https://doi.org) to retrieve publication metadata from DOI values provided by the user.
+
+The DOI system is managed by the DOI Foundation, a not-for-profit organization that governs the Digital Object Identifier system.
+
+### Privacy note
+
+Personal Publication DB does not collect, store, or transmit user data for tracking or analytics purposes.
+
+The only external request currently performed by the program happens when a new publication is inserted using a DOI. In that case, the DOI value is sent to the DOI resolver service in order to retrieve the related publication metadata.
+
+For more information about how DOI services handle privacy, please refer to the [DOI Foundation Privacy Policy](https://www.doi.org/privacy-policy/).
