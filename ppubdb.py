@@ -70,7 +70,6 @@ def doc_add_from_doi( doi:str, category:str, dbname:str):
     headers = { 'Accept': 'application/json' }
     response = requests.get(url, headers=headers)
 
-    
     if response.status_code != 200:
         print(f"Failed to fetch data: {response.status_code}")
         return None
@@ -180,18 +179,26 @@ def authors_list( sort:str, dbname:str ):
 
 @ppdb.command(name='doc-list')
 @click.option(
+    "--category", "category",
+    default=None,
+    help="Filter documents by category.",
+)
+@click.option(
     "--name", "dbname",
     default="publications.db",
     type=click.Path(exists=True),
     help="Database name.",
 )
-def doc_list( dbname:str):
+def doc_list( category:str, dbname:str):
     """List all the authors with their IDs."""
     try:
         dbcon = sqlite3.connect(dbname)
         dbcur = dbcon.cursor()
         
-        dbcur.execute("SELECT idDocument, Category, Title, Container FROM Documents ORDER BY Category" )
+        if category:
+            dbcur.execute("SELECT idDocument, Category, Title, Container FROM Documents WHERE Category = ?", (category,))
+        else:
+            dbcur.execute("SELECT idDocument, Category, Title, Container FROM Documents ORDER BY Category")
         rows = dbcur.fetchall()
 
         for r in rows:
@@ -204,4 +211,3 @@ def doc_list( dbname:str):
 if __name__ == "__main__":
     ppdb()
     click
-        
