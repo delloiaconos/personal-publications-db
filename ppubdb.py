@@ -189,7 +189,7 @@ def authors_list( sort:str, dbname:str ):
     type=click.Path(exists=True),
     help="Database name.",
 )
-def doc_list( category:str, dbname:str):
+def doc_list( category:str, dbname:str ):
     """List all the authors with their IDs."""
     try:
         dbcon = sqlite3.connect(dbname)
@@ -203,6 +203,29 @@ def doc_list( category:str, dbname:str):
 
         for r in rows:
             print( f"""[{r[0]:02d}] "{r[2]}", in {r[3]}""" )    
+
+        dbcon.close()
+    except sqlite3.OperationalError as e:
+        print(e)
+
+@ppdb.command(name='category-list')
+@click.option(
+    "--name", "dbname",
+    default="publications.db",
+    type=click.Path(exists=True),
+    help="Database name.",
+)
+def category_list( dbname:str ):
+    """List all the documents categories."""
+    try:
+        dbcon = sqlite3.connect(dbname)
+        dbcur = dbcon.cursor()
+        
+        dbcur.execute("SELECT DISTINCT Category FROM Documents ORDER BY Category")
+        rows = dbcur.fetchall()
+
+        for r in rows:
+            print( f"""{r[0]}""" )
 
         dbcon.close()
     except sqlite3.OperationalError as e:
