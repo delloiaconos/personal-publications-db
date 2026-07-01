@@ -68,8 +68,7 @@ In this example, author records `2` and `3` are replaced by author record `1` in
 click-docs ppubdb.py \
   --command-name ppdb \
   --program-name ppubdb \
-  --output DOC.MD \
-  --style table \
+  --output MANUAL.MD \
   --list-subcommands
 ```
 
