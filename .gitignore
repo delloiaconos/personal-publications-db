@@ -213,4 +213,5 @@ venv/
 env/
 .env/
 
-publications.db
+*.db
+*.csv
