@@ -66,11 +66,6 @@ The long-term goal is to generate publication lists from the SQLite database usi
 - an HTML block for a personal website;
 - custom formats for grants, reports, or institutional pages.
 
-## License
-
-This project is licensed under the **GNU General Public License Version 3, 29 June 2007**.
-
-See the [LICENSE](./LICENSE) file for the full license text.
 
 ## Contributing
 
@@ -98,3 +93,8 @@ To contribute code:
 
 Please keep contributions aligned with the goal of the project: a simple, personal, local, and customizable publication database.
 
+## License
+
+This project is licensed under the **GNU General Public License Version 3, 29 June 2007**.
+
+See the [LICENSE](./LICENSE) file for the full license text.
