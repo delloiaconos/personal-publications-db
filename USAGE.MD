@@ -60,76 +60,22 @@ python ppubdb.py auth-collapse 1 2 3 --name publications.db
 
 In this example, author records `2` and `3` are replaced by author record `1` in document-author relationships, then the duplicate author records are deleted.
 
+## Development 
 
-## CLI commands
-
-### `db-init`
-
-Create a new SQLite database using the schema in `db.sql`.
+### Generating Documentation
 
 ```bash
-python ppubdb.py db-init --name publications.db
+click-docs ppubdb.py \
+  --command-name ppdb \
+  --program-name ppubdb \
+  --output DOC.MD \
+  --style table \
+  --list-subcommands
 ```
-
-Options:
-
-- `--name`: database filename. Defaults to `publications.db`.
-
-### `doc-from-doi`
-
-Fetch metadata from a DOI and insert the document, DOI identifier, authors, and author order into the database.
-
-```bash
-python ppubdb.py doc-from-doi DOI CATEGORY --name publications.db
-```
-
-Arguments:
-
-- `DOI`: the document DOI, for example `10.0000/example-doi`.
-- `CATEGORY`: a custom category for the document, for example `ARTICLE`, `PREPRINT`, `BOOK_CHAPTER`, or `TALK`.
-
-Options:
-
-- `--name`: database filename. Defaults to `publications.db`.
-
-### `auth-list`
-
-List all authors stored in the database.
-
-```bash
-python ppubdb.py auth-list --name publications.db
-```
-
-### `doc-list`
-
-List all stored documents ordered by category.
-
-```bash
-python ppubdb.py doc-list --name publications.db
-```
-
-### `auth-collapse`
-
-Merge multiple duplicate author records into a single preferred author ID.
-
-```bash
-python ppubdb.py auth-collapse PREFERRED_AUTHOR_ID DUPLICATE_AUTHOR_ID [DUPLICATE_AUTHOR_ID ...] --name publications.db
-```
-
-Example:
-
-```bash
-python ppubdb.py auth-collapse 1 4 7 --name publications.db
-```
-
-This keeps author `1`, updates document-author links that pointed to authors `4` and `7`, and then removes authors `4` and `7`.
-
-### `db-prune`
-
-Reserved for future database cleanup functionality. The command exists but is not implemented yet.
 
 
 ## Usefoul Commands
+
 
 ### Manage `scopus.csv`
 

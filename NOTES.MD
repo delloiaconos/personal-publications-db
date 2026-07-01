@@ -23,4 +23,3 @@ The SQLite schema currently contains the following tables:
 | `DocumentIdentifiers` | Stores unique external identifiers for documents, including DOI values. |
 | `DocumentAuthors` | Links documents to authors and stores author order. |
 
-
