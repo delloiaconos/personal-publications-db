@@ -215,3 +215,4 @@ env/
 
 *.db
 *.csv
+*.egg-info
