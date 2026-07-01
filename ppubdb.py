@@ -145,18 +145,30 @@ def author_collapse( idauthor:int, ids:list, dbname:str):
 
 @ppdb.command(name='auth-list')
 @click.option(
+    "--sort", "[SURNAME|FIRSTNAME]",
+    default="SURNAME",
+    type=click.Choice(['SURNAME', 'FIRSTNAME', "MIDDLENAME"], case_sensitive=False),
+    help="Sort order for the author list.",
+)
+@click.option(
     "--name", "dbname",
     default="publications.db",
     type=click.Path(exists=True),
     help="Database name.",
 )
-def authors_list( dbname:str):
+def authors_list( sort:str, dbname:str ):
     """List all the authors with their IDs."""
     try:
         dbcon = sqlite3.connect(dbname)
         dbcur = dbcon.cursor()
         
-        dbcur.execute("SELECT idAuthor, FirstName, LastName, MiddleName FROM Authors" )
+        sort = sort.upper()
+        if sort == "SURNAME":
+            dbcur.execute("SELECT idAuthor, FirstName, LastName, MiddleName FROM Authors ORDER BY LastName" )
+        elif sort == "FIRSTNAME":
+            dbcur.execute("SELECT idAuthor, FirstName, LastName, MiddleName FROM Authors ORDER BY FirstName" )
+        elif sort == "MIDDLENAME":
+            dbcur.execute("SELECT idAuthor, FirstName, LastName, MiddleName FROM Authors ORDER BY MiddleName" )
         rows = dbcur.fetchall()
 
         for r in rows:
