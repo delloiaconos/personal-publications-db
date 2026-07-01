@@ -155,7 +155,12 @@ def author_collapse( idauthor:int, ids:list, dbname:str):
     type=click.Path(exists=True),
     help="Database name.",
 )
-def authors_list( sort:str, dbname:str ):
+@click.option(
+    "--stats", 
+    is_flag=True,
+    help="Enable verbose output."
+)
+def authors_list( sort:str, dbname:str, stats:bool ):
     """List all the authors with their IDs."""
     try:
         dbcon = sqlite3.connect(dbname)
@@ -171,7 +176,12 @@ def authors_list( sort:str, dbname:str ):
         rows = dbcur.fetchall()
 
         for r in rows:
-            print( f"""[{r[0]:02d}] {r[2]}, {r[1]}""" )    
+            if stats:
+                dbcur.execute("SELECT COUNT(*) FROM DocumentAuthors WHERE idAuthor=?", (r[0],))
+                doc_count = dbcur.fetchone()[0]
+                print( f"""[{r[0]:02d}] {r[2]}, {r[1]} ({doc_count})""" )
+            else:
+                print( f"""[{r[0]:02d}] {r[2]}, {r[1]}""" )
 
         dbcon.close()
     except sqlite3.OperationalError as e:
@@ -215,7 +225,12 @@ def doc_list( category:str, dbname:str ):
     type=click.Path(exists=True),
     help="Database name.",
 )
-def category_list( dbname:str ):
+@click.option(
+    "--stats", 
+    is_flag=True,
+    help="Enable verbose output."
+)
+def category_list( stats:bool, dbname:str ):
     """List all the documents categories."""
     try:
         dbcon = sqlite3.connect(dbname)
@@ -225,7 +240,10 @@ def category_list( dbname:str ):
         rows = dbcur.fetchall()
 
         for r in rows:
-            print( f"""{r[0]} ({r[1]})""" )
+            if stats:
+                print( f"""{r[0]} ({r[1]})""" )
+            else:
+                print( f"""{r[0]}""" )
 
         dbcon.close()
     except sqlite3.OperationalError as e:
