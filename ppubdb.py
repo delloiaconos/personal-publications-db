@@ -221,11 +221,11 @@ def category_list( dbname:str ):
         dbcon = sqlite3.connect(dbname)
         dbcur = dbcon.cursor()
         
-        dbcur.execute("SELECT DISTINCT Category FROM Documents ORDER BY Category")
+        dbcur.execute("SELECT DISTINCT Category, COUNT(*) as Docs FROM Documents ORDER BY Category")
         rows = dbcur.fetchall()
 
         for r in rows:
-            print( f"""{r[0]}""" )
+            print( f"""{r[0]} ({r[1]})""" )
 
         dbcon.close()
     except sqlite3.OperationalError as e:
