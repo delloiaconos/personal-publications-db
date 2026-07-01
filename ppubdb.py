@@ -200,7 +200,7 @@ def authors_list( sort:str, dbname:str, stats:bool ):
     help="Database name.",
 )
 def doc_list( category:str, dbname:str ):
-    """List all the authors with their IDs."""
+    """List all the documents with their IDs."""
     try:
         dbcon = sqlite3.connect(dbname)
         dbcur = dbcon.cursor()
