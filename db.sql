@@ -40,7 +40,6 @@ CREATE TABLE IF NOT EXISTS "DocumentIdentifiers" (
 );
 
 CREATE INDEX "idxDocumentIdentifiers_IdentifierType" ON "DocumentIdentifiers" ("IdentifierType");
-CREATE INDEX "idxDocumentIdentifiers_DocumentIdentifier" ON "DocumentIdentifiers" ("DocumentIdentifier");
 
 CREATE TABLE IF NOT EXISTS "DocumentAuthors" (
 	"idDocument" INTEGER NOT NULL,
