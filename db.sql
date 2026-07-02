@@ -27,6 +27,10 @@ CREATE TABLE IF NOT EXISTS "Documents" (
 	PRIMARY KEY("idDocument" AUTOINCREMENT)
 );
 
+CREATE INDEX "idxDocument_Title" ON "Documents" ("Title");
+CREATE INDEX "idxDocument_Category" ON "Documents" ("Category");
+CREATE INDEX "idxDocument_Container" ON "Documents" ("Container");
+
 CREATE TABLE IF NOT EXISTS "DocumentIdentifiers" (
 	"idDocument" INTEGER NOT NULL,
 	"IdentifierType" TEXT NOT NULL,
