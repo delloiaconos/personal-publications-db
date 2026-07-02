@@ -27,9 +27,9 @@ CREATE TABLE IF NOT EXISTS "Documents" (
 	PRIMARY KEY("idDocument" AUTOINCREMENT)
 );
 
-CREATE INDEX "idxDocument_Title" ON "Documents" ("Title");
-CREATE INDEX "idxDocument_Category" ON "Documents" ("Category");
-CREATE INDEX "idxDocument_Container" ON "Documents" ("Container");
+CREATE INDEX IF NOT EXISTS "idxDocument_Title" ON "Documents" ("Title");
+CREATE INDEX IF NOT EXISTS "idxDocument_Category" ON "Documents" ("Category");
+CREATE INDEX IF NOT EXISTS "idxDocument_Container" ON "Documents" ("Container");
 
 CREATE TABLE IF NOT EXISTS "DocumentIdentifiers" (
 	"idDocument" INTEGER NOT NULL,
@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS "DocumentIdentifiers" (
 	CONSTRAINT "fkDocumentIdentifiers_idDocument" FOREIGN KEY("idDocument") REFERENCES "Documents"("idDocument")
 );
 
-CREATE INDEX "idxDocumentIdentifiers_IdentifierType" ON "DocumentIdentifiers" ("IdentifierType");
+CREATE INDEX IF NOT EXISTS "idxDocumentIdentifiers_IdentifierType" ON "DocumentIdentifiers" ("IdentifierType");
 
 CREATE TABLE IF NOT EXISTS "DocumentAuthors" (
 	"idDocument" INTEGER NOT NULL,
@@ -57,6 +57,6 @@ CREATE TABLE IF NOT EXISTS "DocumentTags" (
 	CONSTRAINT "fkDocumentTags_idDocument" FOREIGN KEY("idDocument") REFERENCES "Documents"("idDocument")
 );
 
-CREATE INDEX "idxDocumentTags_DocumentTag" ON "DocumentTags" ("DocumentTag");
+CREATE INDEX IF NOT EXISTS "idxDocumentTags_DocumentTag" ON "DocumentTags" ("DocumentTag");
 
 COMMIT;
