@@ -1,34 +1,47 @@
 BEGIN TRANSACTION;
-CREATE TABLE IF NOT EXISTS "AuthorIdentifiers" (
-	"idAuthor"	INTEGER NOT NULL,
-	"IdentifierType"	TEXT NOT NULL,
-	"AuthorIdentifier"	TEXT NOT NULL UNIQUE
-);
+
 CREATE TABLE IF NOT EXISTS "Authors" (
-	"idAuthor"	INTEGER NOT NULL UNIQUE,
-	"FirstName"	TEXT NOT NULL,
-	"LastName"	TEXT NOT NULL,
-	"MiddleName"	TEXT,
-	PRIMARY KEY("idAuthor" AUTOINCREMENT),
-	CONSTRAINT "fkAuthodsId_idAutor" FOREIGN KEY("idAuthor") REFERENCES "Authors"("idAuthor")
+	"idAuthor" INTEGER NOT NULL UNIQUE,
+	"FirstName" TEXT NOT NULL,
+	"LastName" TEXT NOT NULL,
+	"MiddleName" TEXT,
+	PRIMARY KEY("idAuthor" AUTOINCREMENT)
 );
-CREATE TABLE IF NOT EXISTS "DocumentAuthors" (
-	"idDocument"	INTEGER NOT NULL,
-	"idAuthor"	INTEGER NOT NULL,
-	"AuthOrder"	INTEGER DEFAULT 0,
-	CONSTRAINT "pkDocAuth" PRIMARY KEY("idDocument","idAuthor")
+
+CREATE TABLE IF NOT EXISTS "AuthorIdentifiers" (
+	"idAuthor" INTEGER NOT NULL,
+	"IdentifierType" TEXT NOT NULL,
+	"AuthorIdentifier" TEXT NOT NULL UNIQUE,
+	CONSTRAINT "fkAuthorIdentifiers_idAuthor" FOREIGN KEY("idAuthor") REFERENCES "Authors"("idAuthor")
 );
-CREATE TABLE IF NOT EXISTS "DocumentIdentifiers" (
-	"idDocument"	INTEGER NOT NULL,
-	"IdentifierType"	TEXT NOT NULL,
-	"DocumentIdentifier"	TEXT NOT NULL UNIQUE,
-	CONSTRAINT "fkDocIde_idDoc" FOREIGN KEY("idDocument") REFERENCES ""
-);
+
 CREATE TABLE IF NOT EXISTS "Documents" (
-	"idDocument"	INTEGER NOT NULL UNIQUE,
-	"Title"	BLOB NOT NULL,
-	"Category"	TEXT NOT NULL,
+	"idDocument" INTEGER NOT NULL UNIQUE,
+	"Title" BLOB NOT NULL,
+	"Category" TEXT NOT NULL,
 	"Container" TEXT NOT NULL,
 	PRIMARY KEY("idDocument" AUTOINCREMENT)
 );
+
+CREATE TABLE IF NOT EXISTS "DocumentIdentifiers" (
+	"idDocument" INTEGER NOT NULL,
+	"IdentifierType" TEXT NOT NULL,
+	"DocumentIdentifier" TEXT NOT NULL UNIQUE,
+	CONSTRAINT "pkDocumentIdentifiers" PRIMARY KEY("idDocument","IdentifierType"),
+	CONSTRAINT "fkDocumentIdentifiers_idDocument" FOREIGN KEY("idDocument") REFERENCES "Documents"("idDocument")
+);
+
+CREATE INDEX "idxDocumentIdentifiers_IdentifierType" ON "DocumentIdentifiers" ("IdentifierType");
+CREATE INDEX "idxDocumentIdentifiers_DocumentIdentifier" ON "DocumentIdentifiers" ("DocumentIdentifier");
+
+
+CREATE TABLE IF NOT EXISTS "DocumentAuthors" (
+	"idDocument" INTEGER NOT NULL,
+	"idAuthor" INTEGER NOT NULL,
+	"AuthOrder"	INTEGER DEFAULT 0,
+	CONSTRAINT "pkDocumentAuthors" PRIMARY KEY("idDocument","idAuthor"),
+	CONSTRAINT "fkDocumentAuthors_idAuthor" FOREIGN KEY("idAuthor") REFERENCES "Authors"("idAuthor"),
+	CONSTRAINT "fkDocumentAuthors_idDocument" FOREIGN KEY("idDocument") REFERENCES "Documents"("idDocument")
+);
+
 COMMIT;
