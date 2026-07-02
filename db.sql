@@ -59,4 +59,13 @@ CREATE TABLE IF NOT EXISTS "DocumentTags" (
 
 CREATE INDEX IF NOT EXISTS "idxDocumentTags_DocumentTag" ON "DocumentTags" ("DocumentTag");
 
+CREATE TABLE IF NOT EXISTS "DocumentKeywords" (
+	"idDocument" INTEGER NOT NULL,
+	"Keyword" TEXT NOT NULL,
+	CONSTRAINT "pkDocumentKeywords" PRIMARY KEY("idDocument","Keyword"),
+	CONSTRAINT "fkDocumentKeywords_idDocument" FOREIGN KEY("idDocument") REFERENCES "Documents"("idDocument")
+);
+
+CREATE INDEX IF NOT EXISTS "idxDocumentKeywords_Keyword" ON "DocumentKeywords" ("Keyword");
+
 COMMIT;
