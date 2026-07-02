@@ -13,13 +13,49 @@ This file collects practical notes about the internal structure of **Personal Pu
 
 ### Database model
 
-The SQLite schema currently contains the following tables:
+The SQLite database is currently structured like:
 
-| Table | Purpose |
-| --- | --- |
-| `Authors` | Stores author names using first name, last name, and optional middle name. |
-| `AuthorIdentifiers` | Stores unique external identifiers for authors. |
-| `Documents` | Stores document title, category, and container such as journal, proceedings, or book title. |
-| `DocumentIdentifiers` | Stores unique external identifiers for documents, including DOI values. |
-| `DocumentAuthors` | Links documents to authors and stores author order. |
-
+```mermaid
+erDiagram
+  "AuthorIdentifiers" {    
+    INTEGER idAuthor FK     
+    TEXT IdentifierType      
+    TEXT AuthorIdentifier  
+  }
+  "Authors" {    
+    INTEGER idAuthor PK     
+    TEXT FirstName      
+    TEXT LastName      
+    TEXT MiddleName  
+  }
+  "DocumentAuthors" {    
+    INTEGER idDocument PK     
+    INTEGER idAuthor PK     
+    INTEGER AuthOrder  
+  }
+  "Documents" {    
+    INTEGER idDocument PK     
+    BLOB Title  "in index: idxDocument_Title"    
+    TEXT Category  "in index: idxDocument_Category"    
+    TEXT Container  "in index: idxDocument_Container"
+  }
+  "DocumentIdentifiers" {    
+    INTEGER idDocument PK     
+    TEXT IdentifierType PK "in index: idxDocumentIdentifiers_IdentifierType"    
+    TEXT DocumentIdentifier  
+  }
+  "DocumentKeywords" {    
+    INTEGER idDocument PK     
+    TEXT Keyword PK "in index: idxDocumentKeywords_Keyword"
+  }
+  "DocumentTags" {    
+    INTEGER idDocument PK     
+    TEXT DocumentTag PK "in index: idxDocumentTags_DocumentTag"
+  }
+  "AuthorIdentifiers" ||--|{ "Authors" : "idAuthor -> idAuthor"
+  "DocumentAuthors" ||--|{ "Authors" : "idAuthor -> idAuthor"
+  "DocumentAuthors" ||--|{ "Documents" : "idDocument -> idDocument"
+  "DocumentIdentifiers" ||--|{ "Documents" : "idDocument -> idDocument"
+  "DocumentKeywords" ||--|{ "Documents" : "idDocument -> idDocument"
+  "DocumentTags" ||--|{ "Documents" : "idDocument -> idDocument"
+```

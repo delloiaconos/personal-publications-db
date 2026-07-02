@@ -73,8 +73,23 @@ click-docs ppubdb.py \
 ```
 
 
-## Usefoul Commands
+### ER Diagram Generation
 
+In order to generate the ER diagram available in the documentation, I use (sqlmermaid)[https://github.com/endremborza/sqlmermaid], a python tool that generate Mermaid ER diagrams from any SQLAlchemy-supported database. 
+
+You can install `sqlmermaid` within your environemnt using the following command:
+```bash
+pip install sqlmermaid
+```
+
+I personally start from a clean database and then generate the er diagram in a temporary file (the tool checks for file extension):
+```bash
+rm publications.db 
+ppubdb db-init
+sqlmermaid sqlite:///publications.db -o erdiagram.md
+```
+
+## Usefoul Commands
 
 ### Manage `scopus.csv`
 
