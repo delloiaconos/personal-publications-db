@@ -1,6 +1,7 @@
 import sqlite3
 import tempfile
 import unittest
+from importlib.resources import files
 from pathlib import Path
 
 from click.testing import CliRunner
@@ -8,15 +9,16 @@ from click.testing import CliRunner
 from ppubdb import ppdb
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-
-
 class AuthorCollapseTests(unittest.TestCase):
     def setUp(self):
         self.temp_dir = tempfile.TemporaryDirectory()
         self.db_path = Path(self.temp_dir.name) / "publications.db"
         with sqlite3.connect(self.db_path) as dbcon:
-            dbcon.executescript((PROJECT_ROOT / "db.sql").read_text())
+            dbcon.executescript(
+                files("ppubdb_resources")
+                .joinpath("db.sql")
+                .read_text(encoding="utf-8")
+            )
             dbcon.executemany(
                 "INSERT INTO Authors (idAuthor, FirstName, LastName) VALUES (?, ?, ?)",
                 [
