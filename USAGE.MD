@@ -28,6 +28,9 @@ python -m pip install click requests jinja2
 
 ## Quick start
 
+All command failures are written to standard error and return a non-zero exit
+code. SQLite failures use the common `Error: Database error: ...` format.
+
 Initialize a new database:
 
 ```bash
