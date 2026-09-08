@@ -58,7 +58,9 @@ Collapse duplicate author records into a preferred author record:
 python ppubdb.py auth-collapse 1 2 3 --name publications.db
 ```
 
-In this example, author records `2` and `3` are replaced by author record `1` in document-author relationships, then the duplicate author records are deleted.
+In this example, document relationships and identifiers belonging to authors `2`
+and `3` are transferred to author `1`, then the duplicate author records are
+deleted. Existing relationships to author `1` are preserved.
 
 ## Development 
 

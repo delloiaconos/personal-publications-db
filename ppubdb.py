@@ -116,6 +116,7 @@ def doc_add_from_doi( doi:str, category:str, dbname:str):
 @click.argument(
     'ids',
     nargs=-1,
+    type=click.INT,
 )
 @click.option(
     "--name", "dbname",
@@ -123,24 +124,75 @@ def doc_add_from_doi( doi:str, category:str, dbname:str):
     type=click.Path(exists=True),
     help="Database name.",
 )
-def author_collapse( idauthor:int, ids:list, dbname:str):
-    """Collapse multiple authors to a single one, it only replaces the author in documents and deletes the collapsed."""
+def author_collapse(idauthor: int, ids: tuple[int, ...], dbname: str):
+    """Merge source authors into a target without leaving orphaned records."""
+    source_ids = tuple(dict.fromkeys(idb for idb in ids if idb != idauthor))
+    if not source_ids:
+        raise click.ClickException("No distinct source authors were provided.")
+
+    dbcon = sqlite3.connect(dbname)
     try:
-        dbcon = sqlite3.connect(dbname)
-        dbcur = dbcon.cursor()
+        dbcon.execute("PRAGMA foreign_keys = ON")
 
-        for idb in ids:
-            dbcur.execute("UPDATE OR IGNORE DocumentAuthors SET idAuthor=? WHERE idAuthor=?", (idauthor, idb))
-        dbcon.commit()
+        with dbcon:
+            target_exists = dbcon.execute(
+                "SELECT 1 FROM Authors WHERE idAuthor = ?", (idauthor,)
+            ).fetchone()
+            if not target_exists:
+                raise click.ClickException(
+                    f"Target author {idauthor} does not exist."
+                )
 
-        for idb in ids:
-            dbcur.execute("DELETE FROM Authors WHERE idAuthor=?", (idb,) )
-        dbcon.commit()
+            placeholders = ",".join("?" for _ in source_ids)
+            existing_sources = {
+                row[0]
+                for row in dbcon.execute(
+                    f"SELECT idAuthor FROM Authors WHERE idAuthor IN ({placeholders})",
+                    source_ids,
+                )
+            }
+            missing_sources = [
+                idb for idb in source_ids if idb not in existing_sources
+            ]
+            if missing_sources:
+                missing = ", ".join(str(idb) for idb in missing_sources)
+                raise click.ClickException(
+                    f"Source author(s) do not exist: {missing}."
+                )
 
-        print("Authors collapsed succesfully.")
+            for idb in source_ids:
+                # Preserve the target relationship when both authors are already
+                # attached to the same document. Otherwise retain the source's
+                # author order while moving the relationship to the target.
+                dbcon.execute(
+                    """
+                    INSERT INTO DocumentAuthors (idDocument, idAuthor, AuthOrder)
+                    SELECT source.idDocument, ?, source.AuthOrder
+                    FROM DocumentAuthors AS source
+                    WHERE source.idAuthor = ?
+                      AND NOT EXISTS (
+                          SELECT 1
+                          FROM DocumentAuthors AS target
+                          WHERE target.idDocument = source.idDocument
+                            AND target.idAuthor = ?
+                      )
+                    """,
+                    (idauthor, idb, idauthor),
+                )
+                dbcon.execute(
+                    "DELETE FROM DocumentAuthors WHERE idAuthor = ?", (idb,)
+                )
+                dbcon.execute(
+                    "UPDATE AuthorIdentifiers SET idAuthor = ? WHERE idAuthor = ?",
+                    (idauthor, idb),
+                )
+                dbcon.execute("DELETE FROM Authors WHERE idAuthor = ?", (idb,))
+
+        click.echo("Authors collapsed successfully.")
+    except sqlite3.Error as e:
+        raise click.ClickException(f"Database error: {e}") from e
+    finally:
         dbcon.close()
-    except sqlite3.OperationalError as e:
-        print(e)
 
 @ppdb.command(name='auth-list')
 @click.option(

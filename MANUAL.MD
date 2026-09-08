@@ -16,7 +16,7 @@ ppubdb [OPTIONS] COMMAND [ARGS]...
 
 **Subcommands:**
 
-- [auth-collapse](#auth-collapse): Collapse multiple authors to a single one, it only replaces the author in documents and deletes the collapsed.
+- [auth-collapse](#auth-collapse): Merge source authors into a target without leaving orphaned records.
 - [auth-list](#auth-list): List all the authors with their IDs.
 - [category-list](#category-list): List all the documents categories.
 - [db-init](#db-init): Instanciate a new database.
@@ -26,7 +26,7 @@ ppubdb [OPTIONS] COMMAND [ARGS]...
 
 ## auth-collapse
 
-Collapse multiple authors to a single one, it only replaces the author in documents and deletes the collapsed.
+Merge source authors into a target without leaving orphaned records.
 
 **Usage:**
 
