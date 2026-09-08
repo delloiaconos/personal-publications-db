@@ -20,7 +20,7 @@ ppubdb [OPTIONS] COMMAND [ARGS]...
 - [auth-list](#auth-list): List all the authors with their IDs.
 - [category-list](#category-list): List all the documents categories.
 - [db-init](#db-init): Instantiate a new database.
-- [db-prune](#db-prune): Prune the database.
+- [db-prune](#db-prune): Remove orphaned records and compact the database.
 - [doc-from-doi](#doc-from-doi): Add a document using its DOI.
 - [doc-list](#doc-list): List all the documents with their IDs.
 
@@ -98,7 +98,7 @@ ppubdb db-init [OPTIONS]
 
 ## db-prune
 
-Prune the database.
+Remove orphaned records and compact the database.
 
 **Usage:**
 

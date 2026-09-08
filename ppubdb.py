@@ -43,8 +43,91 @@ def dbi_init(dbname):
     help="Database name.",
 )
 def dbi_prune(dbname):
-    """Prune the database."""
-    pass
+    """Remove orphaned records and compact the database."""
+    cleanup_queries = (
+        (
+            "AuthorIdentifiers",
+            """
+            DELETE FROM AuthorIdentifiers
+            WHERE NOT EXISTS (
+                SELECT 1 FROM Authors
+                WHERE Authors.idAuthor = AuthorIdentifiers.idAuthor
+            )
+            """,
+        ),
+        (
+            "DocumentIdentifiers",
+            """
+            DELETE FROM DocumentIdentifiers
+            WHERE NOT EXISTS (
+                SELECT 1 FROM Documents
+                WHERE Documents.idDocument = DocumentIdentifiers.idDocument
+            )
+            """,
+        ),
+        (
+            "DocumentAuthors",
+            """
+            DELETE FROM DocumentAuthors
+            WHERE NOT EXISTS (
+                SELECT 1 FROM Documents
+                WHERE Documents.idDocument = DocumentAuthors.idDocument
+            )
+               OR NOT EXISTS (
+                SELECT 1 FROM Authors
+                WHERE Authors.idAuthor = DocumentAuthors.idAuthor
+            )
+            """,
+        ),
+        (
+            "DocumentTags",
+            """
+            DELETE FROM DocumentTags
+            WHERE NOT EXISTS (
+                SELECT 1 FROM Documents
+                WHERE Documents.idDocument = DocumentTags.idDocument
+            )
+            """,
+        ),
+        (
+            "DocumentKeywords",
+            """
+            DELETE FROM DocumentKeywords
+            WHERE NOT EXISTS (
+                SELECT 1 FROM Documents
+                WHERE Documents.idDocument = DocumentKeywords.idDocument
+            )
+            """,
+        ),
+    )
+
+    dbcon = sqlite3.connect(dbname)
+    try:
+        dbcon.execute("PRAGMA foreign_keys = ON")
+        removed_by_table = {}
+
+        with dbcon:
+            for table, query in cleanup_queries:
+                removed_by_table[table] = dbcon.execute(query).rowcount
+
+            violations = dbcon.execute("PRAGMA foreign_key_check").fetchall()
+            if violations:
+                raise click.ClickException(
+                    "Database still contains foreign-key violations after pruning."
+                )
+
+        # VACUUM must run outside a transaction.
+        dbcon.execute("PRAGMA optimize")
+        dbcon.execute("VACUUM")
+    except sqlite3.Error as e:
+        raise click.ClickException(f"Could not prune database: {e}") from e
+    finally:
+        dbcon.close()
+
+    removed_total = sum(removed_by_table.values())
+    click.echo(
+        f"Database pruned successfully: {removed_total} orphaned record(s) removed."
+    )
 
 @ppdb.command(name='doc-from-doi')
 @click.argument(

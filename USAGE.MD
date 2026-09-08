@@ -52,6 +52,13 @@ List all documents:
 python ppubdb.py doc-list --name publications.db
 ```
 
+Remove orphaned relationship and identifier records, verify referential
+integrity, and compact the database file:
+
+```bash
+python ppubdb.py db-prune --name publications.db
+```
+
 Collapse duplicate author records into a preferred author record:
 
 ```bash
