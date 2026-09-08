@@ -1,0 +1,9 @@
+# Documents tagged `{{ tag }}`
+
+{% if documents -%}
+{% for document in documents -%}
+- **{{ document.title }}** — {{ document.container }}{% if document.category %} · _{{ document.category }}_{% endif %}
+{% endfor -%}
+{% else -%}
+_No documents found with this tag._
+{% endif -%}

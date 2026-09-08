@@ -5,6 +5,7 @@ import re
 
 import requests
 import click
+from jinja2 import Environment, StrictUndefined
 
 
 def database_exception(message: str) -> click.ClickException:
@@ -61,6 +62,24 @@ def metadata_text(value):
         value = value[0].strip()
         return value or None
     return None
+
+
+def render_tagged_documents(tag: str, documents: list[dict]) -> str:
+    """Render the packaged Markdown template for a tag-filtered document list."""
+    template_text = (
+        files("ppubdb_resources")
+        .joinpath("templates", "documents_by_tag.md.j2")
+        .read_text(encoding="utf-8")
+    )
+    environment = Environment(
+        autoescape=False,
+        undefined=StrictUndefined,
+        keep_trailing_newline=True,
+    )
+    return environment.from_string(template_text).render(
+        tag=tag,
+        documents=documents,
+    )
 
 
 @click.group()
@@ -443,6 +462,65 @@ def doc_list( category:str, dbname:str ):
 
         for r in rows:
             click.echo(f'[{r[0]:02d}] "{r[2]}", in {r[3]}')
+
+
+@ppdb.command(name="doc-export-tag")
+@click.argument("tag", type=click.STRING)
+@click.option(
+    "--output",
+    "output_path",
+    default="-",
+    type=click.Path(dir_okay=False, writable=True),
+    help="Markdown output path; '-' writes to standard output.",
+)
+@click.option(
+    "--name",
+    "dbname",
+    default="publications.db",
+    type=click.Path(exists=True),
+    help="Database name.",
+)
+def doc_export_tag(tag: str, output_path: str, dbname: str):
+    """Export all documents with TAG as a Markdown document."""
+    tag = tag.strip()
+    if not tag:
+        raise click.ClickException("Tag error: tag cannot be empty.")
+
+    with database_connection(dbname) as dbcon:
+        rows = dbcon.execute(
+            """
+            SELECT d.idDocument, d.Title, d.Category, d.Container
+            FROM Documents AS d
+            INNER JOIN DocumentTags AS t ON t.idDocument = d.idDocument
+            WHERE t.DocumentTag = ?
+            ORDER BY d.Category, d.Title, d.idDocument
+            """,
+            (tag,),
+        ).fetchall()
+
+    documents = [
+        {
+            "id": row[0],
+            "title": row[1],
+            "category": row[2],
+            "container": row[3],
+        }
+        for row in rows
+    ]
+    try:
+        rendered = render_tagged_documents(tag, documents)
+    except OSError as e:
+        raise click.ClickException(f"Template error: {e}") from e
+
+    if output_path == "-":
+        click.echo(rendered, nl=False)
+        return
+
+    try:
+        with click.open_file(output_path, mode="w", encoding="utf-8") as output:
+            output.write(rendered)
+    except OSError as e:
+        raise click.ClickException(f"Output error: {e}") from e
 
 @ppdb.command(name='category-list')
 @click.option(

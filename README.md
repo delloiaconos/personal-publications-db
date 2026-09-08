@@ -51,6 +51,7 @@ This project is in an early development stage. The current implementation provid
 - Preserve author order for each document.
 - List all authors in the local database.
 - List all stored documents.
+- Export documents with a specific tag as Markdown.
 - Collapse duplicate author records into a preferred author entry.
 
 ### Planned

@@ -9,6 +9,7 @@ description = "Personal publication database utility"
 requires-python = ">=3.10"
 dependencies = [
     "click",
+    "Jinja2",
     "requests",
 ]
 
@@ -20,4 +21,4 @@ py-modules = ["ppubdb"]
 packages = ["ppubdb_resources"]
 
 [tool.setuptools.package-data]
-ppubdb_resources = ["db.sql"]
+ppubdb_resources = ["db.sql", "templates/*.j2"]

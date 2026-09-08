@@ -59,6 +59,16 @@ List all documents:
 python ppubdb.py doc-list --name publications.db
 ```
 
+Export all documents with a specific tag to Markdown:
+
+```bash
+python ppubdb.py doc-export-tag important \
+  --name publications.db \
+  --output important.md
+```
+
+Without `--output`, the Markdown is written to standard output.
+
 Remove orphaned relationship and identifier records, verify referential
 integrity, and compact the database file:
 

@@ -22,6 +22,7 @@ ppubdb [OPTIONS] COMMAND [ARGS]...
 - [db-init](#db-init): Instantiate a new database.
 - [db-prune](#db-prune): Remove orphaned records and compact the database.
 - [doc-from-doi](#doc-from-doi): Add a document using its DOI.
+- [doc-export-tag](#doc-export-tag): Export documents with a tag as Markdown.
 - [doc-list](#doc-list): List all the documents with their IDs.
 
 ## auth-collapse
@@ -128,6 +129,24 @@ ppubdb doc-from-doi [OPTIONS] DOI [CATEGORY]
 ```text
   --name PATH  Database name.
   --help       Show this message and exit.
+```
+
+## doc-export-tag
+
+Export all documents with a tag as a Markdown document.
+
+**Usage:**
+
+```text
+ppubdb doc-export-tag [OPTIONS] TAG
+```
+
+**Options:**
+
+```text
+  --output FILE  Markdown output path; '-' writes to standard output.
+  --name PATH    Database name.
+  --help         Show this message and exit.
 ```
 
 ## doc-list

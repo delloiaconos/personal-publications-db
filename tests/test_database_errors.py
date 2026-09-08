@@ -30,6 +30,7 @@ class DatabaseErrorTests(unittest.TestCase):
             ["auth-list"],
             ["doc-list"],
             ["category-list"],
+            ["doc-export-tag", "important"],
             ["db-prune"],
             ["auth-collapse", "1", "2"],
         )
