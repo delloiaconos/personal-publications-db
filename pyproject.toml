@@ -17,3 +17,7 @@ ppubdb = "ppubdb:ppdb"
 
 [tool.setuptools]
 py-modules = ["ppubdb"]
+packages = ["ppubdb_resources"]
+
+[tool.setuptools.package-data]
+ppubdb_resources = ["db.sql"]

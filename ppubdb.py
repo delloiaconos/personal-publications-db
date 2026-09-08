@@ -1,4 +1,6 @@
 import sqlite3
+from importlib.resources import files
+
 import requests
 import click
 
@@ -18,22 +20,19 @@ def ppdb():
 
 )
 def dbi_init(dbname):
-    """Instanciate a new database."""
-    dbcon = sqlite3.connect(dbname)
-    dbcur = dbcon.cursor()
-    with open( 'db.sql', 'r') as f:
-        sql_script = f.read()
-        try:
-            for statement in sql_script.split(';'):
-                if not statement.strip() or statement.startswith('--'):
-                    continue
-                dbcur.execute(statement)
-        except sqlite3.Error as e:
-            print(f"An error occurred: {e}")
-        finally:
-            if dbcon.commit():
-                print("Database created successfully.") 
-            dbcon.close()
+    """Instantiate a new database."""
+    try:
+        sql_script = (
+            files("ppubdb_resources")
+            .joinpath("db.sql")
+            .read_text(encoding="utf-8")
+        )
+        with sqlite3.connect(dbname) as dbcon:
+            dbcon.executescript(sql_script)
+    except (OSError, sqlite3.Error) as e:
+        raise click.ClickException(f"Could not initialize database: {e}") from e
+
+    click.echo("Database created successfully.")
 
 
 @ppdb.command(name='db-prune')

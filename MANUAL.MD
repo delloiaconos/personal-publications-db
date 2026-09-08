@@ -19,7 +19,7 @@ ppubdb [OPTIONS] COMMAND [ARGS]...
 - [auth-collapse](#auth-collapse): Merge source authors into a target without leaving orphaned records.
 - [auth-list](#auth-list): List all the authors with their IDs.
 - [category-list](#category-list): List all the documents categories.
-- [db-init](#db-init): Instanciate a new database.
+- [db-init](#db-init): Instantiate a new database.
 - [db-prune](#db-prune): Prune the database.
 - [doc-from-doi](#doc-from-doi): Add a document using its DOI.
 - [doc-list](#doc-list): List all the documents with their IDs.
@@ -81,7 +81,7 @@ ppubdb category-list [OPTIONS]
 
 ## db-init
 
-Instanciate a new database.
+Instantiate a new database.
 
 **Usage:**
 

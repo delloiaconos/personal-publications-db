@@ -6,9 +6,10 @@ This file collects practical notes about the internal structure of **Personal Pu
 
 ```text
 .
-├── db.sql      # SQLite schema used to initialize the database
-├── ppubdb.py   # Click-based Python command-line interface
-└── README.md   # Project documentation
+├── ppubdb.py                  # Click-based Python command-line interface
+├── ppubdb_resources/
+│   └── db.sql                 # Packaged SQLite initialization schema
+└── README.md                  # Project documentation
 ```
 
 ### Database model
