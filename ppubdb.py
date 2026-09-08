@@ -1,6 +1,7 @@
 import sqlite3
 from contextlib import contextmanager
 from importlib.resources import files
+import re
 
 import requests
 import click
@@ -31,6 +32,35 @@ def database_connection(dbname: str):
     finally:
         if dbcon is not None:
             dbcon.close()
+
+
+DOI_PATTERN = re.compile(r"^10\.\d{4,9}/\S+$", re.IGNORECASE)
+
+
+def normalize_doi(value: str) -> str:
+    """Normalize common DOI URL/prefix forms and validate the DOI shape."""
+    doi = value.strip().strip("<>")
+    doi = re.sub(
+        r"^(?:https?://)?(?:dx\.)?doi\.org/|^doi:\s*",
+        "",
+        doi,
+        flags=re.IGNORECASE,
+    )
+    doi = doi.strip()
+    if not DOI_PATTERN.fullmatch(doi):
+        raise click.ClickException("DOI error: invalid DOI format.")
+    return doi
+
+
+def metadata_text(value):
+    """Return a usable CSL text field, including list-valued fields."""
+    if isinstance(value, str):
+        value = value.strip()
+        return value or None
+    if isinstance(value, list) and value and all(isinstance(item, str) for item in value):
+        value = value[0].strip()
+        return value or None
+    return None
 
 
 @click.group()
@@ -171,14 +201,18 @@ def dbi_prune(dbname):
 )
 def doc_add_from_doi( doi:str, category:str, dbname:str):
     """Add a document using its DOI."""
+    doi = normalize_doi(doi)
     url = "https://doi.org/" + doi
-    headers = { 'Accept': 'application/json' }
+    headers = {
+        "Accept": "application/vnd.citationstyles.csl+json, application/json",
+        "User-Agent": "personal-publication-db/0.1 (+https://doi.org/)",
+    }
     try:
-        response = requests.get(url, headers=headers, timeout=30)
+        response = requests.get(url, headers=headers, timeout=(5, 30))
     except requests.RequestException as e:
         raise click.ClickException(f"DOI error: {e}") from e
 
-    if response.status_code != 200:
+    if not 200 <= response.status_code < 300:
         raise click.ClickException(
             f"DOI error: metadata request returned HTTP {response.status_code}."
         )
@@ -188,20 +222,36 @@ def doc_add_from_doi( doi:str, category:str, dbname:str):
     except (requests.RequestException, ValueError) as e:
         raise click.ClickException("DOI error: invalid JSON response.") from e
 
+    title = metadata_text(data.get("title")) if isinstance(data, dict) else None
+    container = (
+        metadata_text(data.get("container-title"))
+        if isinstance(data, dict)
+        else None
+    )
+    authors = data.get("author") if isinstance(data, dict) else None
     if (
-        not isinstance(data, dict)
-        or not data.get('title')
-        or not data.get('container-title')
-        or not isinstance(data.get('author'), list)
-        or not all(isinstance(author, dict) for author in data['author'])
+        title is None
+        or container is None
+        or not isinstance(authors, list)
+        or not all(isinstance(author, dict) for author in authors)
     ):
         raise click.ClickException("DOI error: incomplete metadata response.")
 
     with database_connection(dbname) as dbcon:
         dbcur = dbcon.cursor()
+        existing = dbcur.execute(
+            "SELECT idDocument FROM DocumentIdentifiers "
+            "WHERE IdentifierType = 'DOI' AND DocumentIdentifier = ?",
+            (doi,),
+        ).fetchone()
+        if existing:
+            raise click.ClickException(
+                f"DOI error: {doi} is already present in the database."
+            )
+
         dbcur.execute(
             "INSERT INTO Documents (Title, Category, Container) VALUES (?, ?, ?)",
-            (data['title'], category, data['container-title']),
+            (title, category.strip() or "DOCUMENT", container),
         )
 
         idDoc = dbcur.lastrowid
@@ -214,9 +264,17 @@ def doc_add_from_doi( doi:str, category:str, dbname:str):
             (idDoc, doi),
         )
 
-        for order, author in enumerate(data['author']):
-            firstName = author.get('given', '')
-            lastName = author.get('family', '')
+        for order, author in enumerate(authors):
+            firstName = author.get("given", "")
+            lastName = author.get("family", "")
+            if not isinstance(firstName, str):
+                firstName = ""
+            if not isinstance(lastName, str):
+                lastName = ""
+            firstName = firstName.strip()
+            lastName = lastName.strip()
+            if not lastName and isinstance(author.get("literal"), str):
+                lastName = author["literal"].strip()
 
             dbcur.execute(
                 "SELECT idAuthor FROM Authors "

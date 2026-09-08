@@ -43,6 +43,10 @@ Add a publication from a DOI:
 python ppubdb.py doc-from-doi "10.0000/example-doi" ARTICLE --name publications.db
 ```
 
+The DOI may also be entered as `doi:10....` or as a `https://doi.org/...`
+URL. The command validates the metadata response, rejects duplicate DOIs, and
+leaves the database unchanged if any insertion step fails.
+
 List all authors:
 
 ```bash
