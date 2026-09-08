@@ -54,7 +54,7 @@ ppubdb auth-list [OPTIONS]
 **Options:**
 
 ```text
-  [SURNAME|FIRSTNAME], --sort [surname|firstname|middlename]
+  --sort [SURNAME|FIRSTNAME|MIDDLENAME]
                                   Sort order for the author list.
   --name PATH                     Database name.
   --stats                         Enable verbose output.

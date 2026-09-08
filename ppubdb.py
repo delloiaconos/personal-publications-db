@@ -318,9 +318,13 @@ def author_collapse(idauthor: int, ids: tuple[int, ...], dbname: str):
 
 @ppdb.command(name='auth-list')
 @click.option(
-    "--sort", "[SURNAME|FIRSTNAME]",
+    "--sort",
+    metavar="[SURNAME|FIRSTNAME|MIDDLENAME]",
     default="SURNAME",
-    type=click.Choice(['SURNAME', 'FIRSTNAME', "MIDDLENAME"], case_sensitive=False),
+    type=click.Choice(
+        ['SURNAME', 'FIRSTNAME', 'MIDDLENAME'],
+        case_sensitive=False,
+    ),
     help="Sort order for the author list.",
 )
 @click.option(
