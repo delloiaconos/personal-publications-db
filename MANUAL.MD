@@ -22,7 +22,7 @@ ppubdb [OPTIONS] COMMAND [ARGS]...
 - [db-init](#db-init): Instantiate a new database.
 - [db-prune](#db-prune): Remove orphaned records and compact the database.
 - [doc-from-doi](#doc-from-doi): Add a document using its DOI.
-- [doc-export-tag](#doc-export-tag): Export documents with a tag as Markdown.
+- [doc-export-tag](#doc-export-tag): Export documents with a tag using a Jinja2 template.
 - [doc-list](#doc-list): List all the documents with their IDs.
 
 ## auth-collapse
@@ -133,7 +133,7 @@ ppubdb doc-from-doi [OPTIONS] DOI [CATEGORY]
 
 ## doc-export-tag
 
-Export all documents with a tag as a Markdown document.
+Export all documents with a tag using a Jinja2 template.
 
 **Usage:**
 
@@ -144,10 +144,18 @@ ppubdb doc-export-tag [OPTIONS] TAG
 **Options:**
 
 ```text
-  --output FILE  Markdown output path; '-' writes to standard output.
-  --name PATH    Database name.
-  --help         Show this message and exit.
+  --template TEXT  Jinja2 template name or local path.  [default:
+                   document_by_tag.md.j2]
+  --output FILE    Rendered output path; '-' writes to standard output.
+  --name PATH      Database name.
+  --help           Show this message and exit.
 ```
+
+The template is resolved first as a file in the current directory and then by
+name in the templates bundled with `ppubdb`. The Jinja2 context contains `tag`
+and `documents`. Each document provides `id`, `title`, `category`, `container`,
+and `authors`. Authors are ordered by their publication order and provide `id`,
+`first_name`, `middle_name`, `last_name`, and `order`.
 
 ## doc-list
 

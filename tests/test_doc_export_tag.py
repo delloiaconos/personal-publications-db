@@ -32,6 +32,19 @@ class DocumentTagExportTests(unittest.TestCase):
                 "INSERT INTO DocumentTags (idDocument, DocumentTag) VALUES (?, ?)",
                 [(1, "important"), (2, "other"), (3, "important")],
             )
+            dbcon.executemany(
+                "INSERT INTO Authors "
+                "(idAuthor, FirstName, MiddleName, LastName) VALUES (?, ?, ?, ?)",
+                [
+                    (1, "Second", None, "Author"),
+                    (2, "First", "Middle", "Author"),
+                ],
+            )
+            dbcon.executemany(
+                "INSERT INTO DocumentAuthors "
+                "(idDocument, idAuthor, AuthOrder) VALUES (?, ?, ?)",
+                [(1, 1, 1), (1, 2, 0)],
+            )
 
     def tearDown(self):
         self.temp_dir.cleanup()
@@ -71,6 +84,70 @@ class DocumentTagExportTests(unittest.TestCase):
         self.assertEqual(result.exit_code, 0, result.output)
         self.assertIn("# Documents tagged `missing`", result.output)
         self.assertIn("No documents found with this tag.", result.output)
+
+    def test_custom_template_receives_authors_in_publication_order(self):
+        template_path = Path(self.temp_dir.name) / "citation.txt.j2"
+        template_path.write_text(
+            "{% for document in documents %}"
+            "{{ document.title }}: "
+            "{% for author in document.authors %}"
+            "{{ author.first_name }} {{ author.middle_name or '' }} "
+            "{{ author.last_name }}{% if not loop.last %}, {% endif %}"
+            "{% endfor %}\n"
+            "{% endfor %}",
+            encoding="utf-8",
+        )
+
+        result = CliRunner().invoke(
+            ppdb,
+            [
+                "doc-export-tag",
+                "important",
+                "--template",
+                str(template_path),
+                "--name",
+                str(self.db_path),
+            ],
+        )
+
+        self.assertEqual(result.exit_code, 0, result.output)
+        self.assertIn(
+            "Tagged article: First Middle Author, Second  Author",
+            result.output,
+        )
+
+    def test_local_template_takes_precedence_over_packaged_template(self):
+        runner = CliRunner()
+        with runner.isolated_filesystem(temp_dir=self.temp_dir.name):
+            Path("document_by_tag.md.j2").write_text(
+                "Local template: {{ tag }}\n", encoding="utf-8"
+            )
+            result = runner.invoke(
+                ppdb,
+                ["doc-export-tag", "important", "--name", str(self.db_path)],
+            )
+
+        self.assertEqual(result.exit_code, 0, result.output)
+        self.assertEqual(result.output, "Local template: important\n")
+
+    def test_reports_missing_template(self):
+        result = CliRunner().invoke(
+            ppdb,
+            [
+                "doc-export-tag",
+                "important",
+                "--template",
+                "missing-template.j2",
+                "--name",
+                str(self.db_path),
+            ],
+        )
+
+        self.assertNotEqual(result.exit_code, 0)
+        self.assertIn(
+            "Template error: template 'missing-template.j2' was not found",
+            result.output,
+        )
 
     def test_rejects_empty_tag(self):
         result = CliRunner().invoke(

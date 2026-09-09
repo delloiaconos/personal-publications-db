@@ -1,6 +1,7 @@
 import sqlite3
 from contextlib import contextmanager
 from importlib.resources import files
+from pathlib import Path
 import re
 
 import requests
@@ -64,13 +65,30 @@ def metadata_text(value):
     return None
 
 
-def render_tagged_documents(tag: str, documents: list[dict]) -> str:
-    """Render the packaged Markdown template for a tag-filtered document list."""
-    template_text = (
-        files("ppubdb_resources")
-        .joinpath("templates", "documents_by_tag.md.j2")
-        .read_text(encoding="utf-8")
-    )
+def load_template(template_name: str) -> str:
+    """Load a template from the current directory or packaged templates."""
+    local_template = Path(template_name)
+    if local_template.is_file():
+        return local_template.read_text(encoding="utf-8")
+
+    template_path = Path(template_name)
+    if not template_path.is_absolute() and ".." not in template_path.parts:
+        packaged_template = files("ppubdb_resources").joinpath(
+            "templates", template_name
+        )
+        if packaged_template.is_file():
+            return packaged_template.read_text(encoding="utf-8")
+
+    raise FileNotFoundError(f"template '{template_name}' was not found")
+
+
+def render_tagged_documents(
+    tag: str,
+    documents: list[dict],
+    template_name: str = "document_by_tag.md.j2",
+) -> str:
+    """Render a tag-filtered document list with the selected Jinja2 template."""
+    template_text = load_template(template_name)
     environment = Environment(
         autoescape=False,
         undefined=StrictUndefined,
@@ -467,11 +485,18 @@ def doc_list( category:str, dbname:str ):
 @ppdb.command(name="doc-export-tag")
 @click.argument("tag", type=click.STRING)
 @click.option(
+    "--template",
+    "template_name",
+    default="document_by_tag.md.j2",
+    show_default=True,
+    help="Jinja2 template name or local path.",
+)
+@click.option(
     "--output",
     "output_path",
     default="-",
     type=click.Path(dir_okay=False, writable=True),
-    help="Markdown output path; '-' writes to standard output.",
+    help="Rendered output path; '-' writes to standard output.",
 )
 @click.option(
     "--name",
@@ -480,8 +505,10 @@ def doc_list( category:str, dbname:str ):
     type=click.Path(exists=True),
     help="Database name.",
 )
-def doc_export_tag(tag: str, output_path: str, dbname: str):
-    """Export all documents with TAG as a Markdown document."""
+def doc_export_tag(
+    tag: str, template_name: str, output_path: str, dbname: str
+):
+    """Export all documents with TAG using a Jinja2 template."""
     tag = tag.strip()
     if not tag:
         raise click.ClickException("Tag error: tag cannot be empty.")
@@ -498,17 +525,44 @@ def doc_export_tag(tag: str, output_path: str, dbname: str):
             (tag,),
         ).fetchall()
 
+        author_rows = dbcon.execute(
+            """
+            SELECT da.idDocument, a.idAuthor, a.FirstName, a.MiddleName,
+                   a.LastName, da.AuthOrder
+            FROM DocumentTags AS t
+            INNER JOIN DocumentAuthors AS da
+                ON da.idDocument = t.idDocument
+            INNER JOIN Authors AS a ON a.idAuthor = da.idAuthor
+            WHERE t.DocumentTag = ?
+            ORDER BY da.idDocument, da.AuthOrder, a.idAuthor
+            """,
+            (tag,),
+        ).fetchall()
+
+    authors_by_document = {row[0]: [] for row in rows}
+    for row in author_rows:
+        authors_by_document[row[0]].append(
+            {
+                "id": row[1],
+                "first_name": row[2],
+                "middle_name": row[3],
+                "last_name": row[4],
+                "order": row[5],
+            }
+        )
+
     documents = [
         {
             "id": row[0],
             "title": row[1],
             "category": row[2],
             "container": row[3],
+            "authors": authors_by_document[row[0]],
         }
         for row in rows
     ]
     try:
-        rendered = render_tagged_documents(tag, documents)
+        rendered = render_tagged_documents(tag, documents, template_name)
     except OSError as e:
         raise click.ClickException(f"Template error: {e}") from e
 

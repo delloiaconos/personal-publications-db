@@ -24,7 +24,7 @@ Personal Publication DB is not intended to duplicate full reference managers or 
 - merge duplicate author records;
 - include unpublished or not-yet-indexed works;
 - organize publications by category;
-- eventually render custom publication lists using Jinja2 templates.
+- render custom publication lists using Jinja2 templates.
 
 ### Design philosophy
 
@@ -41,7 +41,7 @@ This is especially useful when:
 
 ## Features
 
-This project is in an early development stage. The current implementation provides a Python CLI backed by SQLite. DOI import, author listing, publication listing, and basic author merging are already present. Template-based export with Jinja2 is part of the project scope and roadmap.
+This project is in an early development stage. The current implementation provides a Python CLI backed by SQLite. DOI import, author listing, publication listing, basic author merging, and template-based export with Jinja2 are already present.
 
 ### Implemented
 
@@ -51,13 +51,12 @@ This project is in an early development stage. The current implementation provid
 - Preserve author order for each document.
 - List all authors in the local database.
 - List all stored documents.
-- Export documents with a specific tag as Markdown.
+- Export documents with a specific tag using local or bundled Jinja2 templates.
 - Collapse duplicate author records into a preferred author entry.
 
 ### Planned
 
-- Export formatted references using Jinja2 templates.
-- Create custom templates for CVs, websites, GitHub profile pages, and academic pages.
+- Add more bundled templates for common citation styles and output formats.
 - Add manual publication entry for unpublished or preprint works.
 - Improve database maintenance commands.
 - Add richer author personalization, such as preferred display names and initials.
