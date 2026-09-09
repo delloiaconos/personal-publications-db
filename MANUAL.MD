@@ -22,7 +22,7 @@ ppubdb [OPTIONS] COMMAND [ARGS]...
 - [db-init](#db-init): Instantiate a new database.
 - [db-prune](#db-prune): Remove orphaned records and compact the database.
 - [doc-from-doi](#doc-from-doi): Add documents using a DOI or a text file containing one DOI per line.
-- [doc-export-tag](#doc-export-tag): Export documents with a tag using a Jinja2 template.
+- [doc-export-tag](#doc-export-tag): Export documents, optionally filtering them by tag.
 - [doc-list](#doc-list): List all the documents with their IDs.
 
 ## auth-collapse
@@ -141,12 +141,12 @@ DataCite REST API before reporting an incomplete-metadata error.
 
 ## doc-export-tag
 
-Export all documents with a tag using a Jinja2 template.
+Export all documents, optionally filtering them by tag.
 
 **Usage:**
 
 ```text
-ppubdb doc-export-tag [OPTIONS] TAG
+ppubdb doc-export-tag [OPTIONS] [TAG]
 ```
 
 **Options:**
@@ -162,8 +162,17 @@ ppubdb doc-export-tag [OPTIONS] TAG
 The template is resolved first as a file in the current directory and then by
 name in the templates bundled with `ppubdb`. The Jinja2 context contains `tag`
 and `documents`. Each document provides `id`, `title`, `category`, `container`,
-and `authors`. Authors are ordered by their publication order and provide `id`,
-`first_name`, `middle_name`, `last_name`, and `order`.
+`doi`, and `authors`. Authors are ordered by their publication order and provide
+`id`, `first_name`, `middle_name`, `last_name`, and `order`.
+
+When `TAG` is omitted, all documents are exported and `tag` is `None` in the
+template context.
+
+The bundled `ieee.txt.j2` template produces IEEE-style plain-text citations:
+
+```text
+ppubdb doc-export-tag TAG --template ieee.txt.j2 --output citations.txt
+```
 
 ## doc-list
 

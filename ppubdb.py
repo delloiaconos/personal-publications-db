@@ -287,7 +287,7 @@ def load_template(template_name: str) -> str:
 
 
 def render_tagged_documents(
-    tag: str,
+    tag: str | None,
     documents: list[dict],
     template_name: str = "document_by_tag.md.j2",
 ) -> str:
@@ -602,7 +602,7 @@ def doc_list( category:str, dbname:str ):
 
 
 @ppdb.command(name="doc-export-tag")
-@click.argument("tag", type=click.STRING)
+@click.argument("tag", required=False, type=click.STRING)
 @click.option(
     "--template",
     "template_name",
@@ -625,37 +625,51 @@ def doc_list( category:str, dbname:str ):
     help="Database name.",
 )
 def doc_export_tag(
-    tag: str, template_name: str, output_path: str, dbname: str
+    tag: str | None, template_name: str, output_path: str, dbname: str
 ):
-    """Export all documents with TAG using a Jinja2 template."""
-    tag = tag.strip()
-    if not tag:
+    """Export all documents, optionally filtering them by TAG."""
+    if tag is not None:
+        tag = tag.strip()
+    if tag == "":
         raise click.ClickException("Tag error: tag cannot be empty.")
 
     with database_connection(dbname) as dbcon:
         rows = dbcon.execute(
             """
-            SELECT d.idDocument, d.Title, d.Category, d.Container
+            SELECT d.idDocument, d.Title, d.Category, d.Container,
+                   (
+                       SELECT di.DocumentIdentifier
+                       FROM DocumentIdentifiers AS di
+                       WHERE di.idDocument = d.idDocument
+                         AND di.IdentifierType = 'DOI'
+                   ) AS DOI
             FROM Documents AS d
-            INNER JOIN DocumentTags AS t ON t.idDocument = d.idDocument
-            WHERE t.DocumentTag = ?
+            WHERE ? IS NULL OR EXISTS (
+                SELECT 1
+                FROM DocumentTags AS t
+                WHERE t.idDocument = d.idDocument
+                  AND t.DocumentTag = ?
+            )
             ORDER BY d.Category, d.Title, d.idDocument
             """,
-            (tag,),
+            (tag, tag),
         ).fetchall()
 
         author_rows = dbcon.execute(
             """
             SELECT da.idDocument, a.idAuthor, a.FirstName, a.MiddleName,
                    a.LastName, da.AuthOrder
-            FROM DocumentTags AS t
-            INNER JOIN DocumentAuthors AS da
-                ON da.idDocument = t.idDocument
+            FROM DocumentAuthors AS da
             INNER JOIN Authors AS a ON a.idAuthor = da.idAuthor
-            WHERE t.DocumentTag = ?
+            WHERE ? IS NULL OR EXISTS (
+                SELECT 1
+                FROM DocumentTags AS t
+                WHERE t.idDocument = da.idDocument
+                  AND t.DocumentTag = ?
+            )
             ORDER BY da.idDocument, da.AuthOrder, a.idAuthor
             """,
-            (tag,),
+            (tag, tag),
         ).fetchall()
 
     authors_by_document = {row[0]: [] for row in rows}
@@ -676,6 +690,7 @@ def doc_export_tag(
             "title": row[1],
             "category": row[2],
             "container": row[3],
+            "doi": row[4],
             "authors": authors_by_document[row[0]],
         }
         for row in rows

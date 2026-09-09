@@ -1,0 +1,29 @@
+{%- macro initials(value) -%}
+{%- if value -%}
+{%- for part in value.split() -%}
+{{ part[0] }}.{% if not loop.last %} {% endif %}
+{%- endfor -%}
+{%- endif -%}
+{%- endmacro -%}
+
+{%- macro author_name(author) -%}
+{{ initials(author.first_name) }}{% if author.middle_name %} {{ initials(author.middle_name) }}{% endif %} {{ author.last_name }}
+{%- endmacro -%}
+
+{%- for document in documents %}
+{%- for author in document.authors -%}
+{%- if not loop.first %}{% if loop.last %}{% if loop.length > 2 %}, and {% else %} and {% endif %}{% else %}, {% endif %}{% endif -%}
+{{ author_name(author) }}
+{%- endfor -%}
+{% if document.authors %}, {% endif %}“{{ document.title }},” {{ document.container }}
+{%- set volume = document.volume|default(none) -%}
+{%- set issue = document.issue|default(none) -%}
+{%- set pages = document.pages|default(none) -%}
+{%- set month = document.month|default(none) -%}
+{%- set year = document.year|default(none) -%}
+{%- if volume %}, vol. {{ volume }}{% endif -%}
+{%- if issue %}, no. {{ issue }}{% endif -%}
+{%- if pages %}, pp. {{ pages }}{% endif -%}
+{%- if month or year %}, {% if month %}{{ month }}{% if year %} {% endif %}{% endif %}{% if year %}{{ year }}{% endif %}{% endif -%}
+{%- if document.doi %}, doi: {{ document.doi }}{% endif %}.
+{% endfor -%}
