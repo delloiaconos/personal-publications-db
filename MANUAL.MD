@@ -38,7 +38,7 @@ ppubdb auth-collapse [OPTIONS] IDAUTHOR [IDS]...
 **Options:**
 
 ```text
-  --name PATH  Database name.
+  --db PATH  Database name.
   --help       Show this message and exit.
 ```
 
@@ -57,7 +57,7 @@ ppubdb auth-list [OPTIONS]
 ```text
   --sort [SURNAME|FIRSTNAME|MIDDLENAME]
                                   Sort order for the author list.
-  --name PATH                     Database name.
+  --db PATH                     Database name.
   --stats                         Enable verbose output.
   --help                          Show this message and exit.
 ```
@@ -75,7 +75,7 @@ ppubdb category-list [OPTIONS]
 **Options:**
 
 ```text
-  --name PATH  Database name.
+  --db PATH  Database name.
   --stats      Enable verbose output.
   --help       Show this message and exit.
 ```
@@ -93,7 +93,7 @@ ppubdb db-init [OPTIONS]
 **Options:**
 
 ```text
-  --name PATH  Database name.
+  --db PATH  Database name.
   --help       Show this message and exit.
 ```
 
@@ -110,7 +110,7 @@ ppubdb db-prune [OPTIONS]
 **Options:**
 
 ```text
-  --name PATH  Database name.
+  --db PATH  Database name.
   --help       Show this message and exit.
 ```
 
@@ -127,7 +127,7 @@ ppubdb doc-from-doi [OPTIONS] DOI_OR_FILE [CATEGORY]
 **Options:**
 
 ```text
-  --name PATH  Database name.
+  --db PATH  Database name.
   --help       Show this message and exit.
 ```
 
@@ -152,7 +152,7 @@ ppubdb doc-export-tag [OPTIONS] TAG
   --template TEXT  Jinja2 template name or local path.  [default:
                    document_by_tag.md.j2]
   --output FILE    Rendered output path; '-' writes to standard output.
-  --name PATH      Database name.
+  --db PATH      Database name.
   --help           Show this message and exit.
 ```
 
@@ -176,6 +176,6 @@ ppubdb doc-list [OPTIONS]
 
 ```text
   --category TEXT  Filter documents by category.
-  --name PATH      Database name.
+  --db PATH      Database name.
   --help           Show this message and exit.
 ```

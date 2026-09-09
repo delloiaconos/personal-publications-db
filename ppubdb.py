@@ -242,7 +242,7 @@ def ppdb():
 
 @ppdb.command(name='db-init')
 @click.option(
-    "--name", "dbname",
+    "--db", "dbname",
     default="publications.db",
     type=click.Path(exists=False),
     help="Database name.",
@@ -267,7 +267,7 @@ def dbi_init(dbname):
 
 @ppdb.command(name='db-prune')
 @click.option(
-    "--name", "dbname",
+    "--db", "dbname",
     default="publications.db",
     type=click.Path(exists=True),
     help="Database name.",
@@ -366,7 +366,7 @@ def dbi_prune(dbname):
     default="DOCUMENT",
 )
 @click.option(
-    "--name", "dbname",
+    "--db", "dbname",
     default="publications.db",
     type=click.Path(exists=True),
     help="Database name.",
@@ -397,7 +397,7 @@ def doc_add_from_doi(doi: str, category: str, dbname: str):
     type=click.INT,
 )
 @click.option(
-    "--name", "dbname",
+    "--db", "dbname",
     default="publications.db",
     type=click.Path(exists=True),
     help="Database name.",
@@ -472,7 +472,7 @@ def author_collapse(idauthor: int, ids: tuple[int, ...], dbname: str):
     help="Sort order for the author list.",
 )
 @click.option(
-    "--name", "dbname",
+    "--db", "dbname",
     default="publications.db",
     type=click.Path(exists=True),
     help="Database name.",
@@ -511,7 +511,7 @@ def authors_list( sort:str, dbname:str, stats:bool ):
     help="Filter documents by category.",
 )
 @click.option(
-    "--name", "dbname",
+    "--db", "dbname",
     default="publications.db",
     type=click.Path(exists=True),
     help="Database name.",
@@ -548,7 +548,7 @@ def doc_list( category:str, dbname:str ):
     help="Rendered output path; '-' writes to standard output.",
 )
 @click.option(
-    "--name",
+    "--db",
     "dbname",
     default="publications.db",
     type=click.Path(exists=True),
@@ -627,7 +627,7 @@ def doc_export_tag(
 
 @ppdb.command(name='category-list')
 @click.option(
-    "--name", "dbname",
+    "--db", "dbname",
     default="publications.db",
     type=click.Path(exists=True),
     help="Database name.",
