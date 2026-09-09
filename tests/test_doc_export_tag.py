@@ -56,7 +56,7 @@ class DocumentTagExportTests(unittest.TestCase):
             [
                 "doc-export-tag",
                 "important",
-                "--name",
+                "--db",
                 str(self.db_path),
                 "--output",
                 str(output_path),
@@ -78,7 +78,7 @@ class DocumentTagExportTests(unittest.TestCase):
     def test_writes_markdown_to_stdout_and_handles_no_matches(self):
         result = CliRunner().invoke(
             ppdb,
-            ["doc-export-tag", "missing", "--name", str(self.db_path)],
+            ["doc-export-tag", "missing", "--db", str(self.db_path)],
         )
 
         self.assertEqual(result.exit_code, 0, result.output)
@@ -105,7 +105,7 @@ class DocumentTagExportTests(unittest.TestCase):
                 "important",
                 "--template",
                 str(template_path),
-                "--name",
+                "--db",
                 str(self.db_path),
             ],
         )
@@ -124,7 +124,7 @@ class DocumentTagExportTests(unittest.TestCase):
             )
             result = runner.invoke(
                 ppdb,
-                ["doc-export-tag", "important", "--name", str(self.db_path)],
+                ["doc-export-tag", "important", "--db", str(self.db_path)],
             )
 
         self.assertEqual(result.exit_code, 0, result.output)
@@ -138,7 +138,7 @@ class DocumentTagExportTests(unittest.TestCase):
                 "important",
                 "--template",
                 "missing-template.j2",
-                "--name",
+                "--db",
                 str(self.db_path),
             ],
         )
@@ -152,7 +152,7 @@ class DocumentTagExportTests(unittest.TestCase):
     def test_rejects_empty_tag(self):
         result = CliRunner().invoke(
             ppdb,
-            ["doc-export-tag", "   ", "--name", str(self.db_path)],
+            ["doc-export-tag", "   ", "--db", str(self.db_path)],
         )
 
         self.assertNotEqual(result.exit_code, 0)

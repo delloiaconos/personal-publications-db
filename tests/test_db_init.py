@@ -12,7 +12,7 @@ class DatabaseInitTests(unittest.TestCase):
         runner = CliRunner()
 
         with runner.isolated_filesystem():
-            result = runner.invoke(ppdb, ["db-init", "--name", "publications.db"])
+            result = runner.invoke(ppdb, ["db-init", "--db", "publications.db"])
 
             self.assertEqual(result.exit_code, 0, result.output)
             self.assertIn("Database created successfully.", result.output)

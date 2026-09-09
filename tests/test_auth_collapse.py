@@ -56,7 +56,7 @@ class AuthorCollapseTests(unittest.TestCase):
             [
                 "auth-collapse",
                 *(str(author_id) for author_id in author_ids),
-                "--name",
+                "--db",
                 str(self.db_path),
             ],
         )

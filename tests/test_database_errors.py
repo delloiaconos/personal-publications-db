@@ -39,7 +39,7 @@ class DatabaseErrorTests(unittest.TestCase):
             with self.subTest(command=command[0]):
                 result = self.runner.invoke(
                     ppdb,
-                    [*command, "--name", str(self.db_path)],
+                    [*command, "--db", str(self.db_path)],
                 )
                 self.assert_database_error(result)
 
@@ -48,7 +48,7 @@ class DatabaseErrorTests(unittest.TestCase):
 
         result = self.runner.invoke(
             ppdb,
-            ["db-init", "--name", invalid_path],
+            ["db-init", "--db", invalid_path],
         )
 
         self.assert_database_error(result)
@@ -65,7 +65,7 @@ class DatabaseErrorTests(unittest.TestCase):
 
         result = self.runner.invoke(
             ppdb,
-            ["doc-from-doi", "10.0000/example", "--name", str(self.db_path)],
+            ["doc-from-doi", "10.0000/example", "--db", str(self.db_path)],
         )
 
         self.assert_database_error(result)
@@ -76,7 +76,7 @@ class DatabaseErrorTests(unittest.TestCase):
 
         result = self.runner.invoke(
             ppdb,
-            ["doc-from-doi", "10.0000/example", "--name", str(self.db_path)],
+            ["doc-from-doi", "10.0000/example", "--db", str(self.db_path)],
         )
 
         self.assertNotEqual(result.exit_code, 0)
@@ -106,7 +106,7 @@ class DatabaseErrorTests(unittest.TestCase):
 
         result = self.runner.invoke(
             ppdb,
-            ["doc-from-doi", "10.0000/example", "--name", str(self.db_path)],
+            ["doc-from-doi", "10.0000/example", "--db", str(self.db_path)],
         )
 
         self.assert_database_error(result)

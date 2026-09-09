@@ -43,7 +43,7 @@ class AuthorListSortTests(unittest.TestCase):
             with self.subTest(value=value):
                 result = runner.invoke(
                     ppdb,
-                    ["auth-list", "--sort", value, "--name", str(self.db_path)],
+                    ["auth-list", "--sort", value, "--db", str(self.db_path)],
                 )
                 self.assertEqual(result.exit_code, 0, result.output)
 

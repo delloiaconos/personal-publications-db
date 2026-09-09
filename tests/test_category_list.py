@@ -35,7 +35,7 @@ class CategoryListTests(unittest.TestCase):
     def invoke_category_list(self, *options):
         return CliRunner().invoke(
             ppdb,
-            ["category-list", *options, "--name", str(self.db_path)],
+            ["category-list", *options, "--db", str(self.db_path)],
         )
 
     def test_lists_each_category_once_in_sorted_order(self):

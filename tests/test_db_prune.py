@@ -74,7 +74,7 @@ class DatabasePruneTests(unittest.TestCase):
     def test_removes_only_orphaned_records(self):
         result = CliRunner().invoke(
             ppdb,
-            ["db-prune", "--name", str(self.db_path)],
+            ["db-prune", "--db", str(self.db_path)],
         )
 
         self.assertEqual(result.exit_code, 0, result.output)
@@ -111,7 +111,7 @@ class DatabasePruneTests(unittest.TestCase):
 
         result = CliRunner().invoke(
             ppdb,
-            ["db-prune", "--name", str(self.db_path)],
+            ["db-prune", "--db", str(self.db_path)],
         )
 
         self.assertEqual(result.exit_code, 0, result.output)
