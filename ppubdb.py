@@ -539,7 +539,10 @@ def category_list( stats:bool, dbname:str ):
     with database_connection(dbname) as dbcon:
         dbcur = dbcon.cursor()
         
-        dbcur.execute("SELECT DISTINCT Category, COUNT(*) as Docs FROM Documents ORDER BY Category")
+        dbcur.execute(
+            "SELECT Category, COUNT(*) AS Docs "
+            "FROM Documents GROUP BY Category ORDER BY Category"
+        )
         rows = dbcur.fetchall()
 
         for r in rows:
