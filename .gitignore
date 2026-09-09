@@ -212,6 +212,8 @@ venv/
 .venv/
 env/
 .env/
+local/
+.local/
 
 *.db
 *.csv
