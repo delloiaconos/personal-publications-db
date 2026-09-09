@@ -136,6 +136,9 @@ and imported as a DOI. `CATEGORY` is applied to every publication in the file.
 The batch is atomic: if validation, metadata retrieval, or insertion fails for
 one DOI, none of the publications from that invocation are added.
 
+If the metadata returned by `doi.org` is incomplete, `ppubdb` tries the
+DataCite REST API before reporting an incomplete-metadata error.
+
 ## doc-export-tag
 
 Export all documents with a tag using a Jinja2 template.

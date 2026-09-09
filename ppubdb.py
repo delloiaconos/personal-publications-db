@@ -93,6 +93,68 @@ def read_doi_source(value: str) -> list[str]:
     return dois
 
 
+def datacite_metadata(data) -> tuple[str, str, list[dict]] | None:
+    """Convert a DataCite JSON:API response to the internal CSL-like fields."""
+    if not isinstance(data, dict):
+        return None
+    resource = data.get("data")
+    if not isinstance(resource, dict):
+        return None
+    attributes = resource.get("attributes")
+    if not isinstance(attributes, dict):
+        return None
+
+    titles = attributes.get("titles")
+    title = None
+    if isinstance(titles, list):
+        for item in titles:
+            if isinstance(item, dict):
+                title = metadata_text(item.get("title"))
+                if title is not None:
+                    break
+
+    container = None
+    container_data = attributes.get("container")
+    if isinstance(container_data, dict):
+        container = metadata_text(container_data.get("title"))
+    if container is None:
+        container = metadata_text(attributes.get("publisher"))
+
+    creators = attributes.get("creators")
+    if not isinstance(creators, list) or not all(
+        isinstance(creator, dict) for creator in creators
+    ):
+        return None
+    authors = [
+        {
+            "given": creator.get("givenName", ""),
+            "family": creator.get("familyName", ""),
+            "literal": creator.get("name", ""),
+        }
+        for creator in creators
+    ]
+
+    if title is None or container is None:
+        return None
+    return title, container, authors
+
+
+def fetch_datacite_metadata(doi: str) -> tuple[str, str, list[dict]] | None:
+    """Try to retrieve complete metadata for a DOI from DataCite."""
+    url = "https://api.datacite.org/dois/" + doi
+    headers = {
+        "Accept": "application/vnd.api+json",
+        "User-Agent": "personal-publication-db/0.1 (+https://doi.org/)",
+    }
+    try:
+        response = requests.get(url, headers=headers, timeout=(5, 30))
+        if not 200 <= response.status_code < 300:
+            return None
+        return datacite_metadata(response.json())
+    except (requests.RequestException, ValueError):
+        return None
+
+
 def fetch_doi_metadata(doi: str) -> tuple[str, str, list[dict]]:
     """Fetch and validate CSL metadata for a normalized DOI."""
     url = "https://doi.org/" + doi
@@ -107,13 +169,16 @@ def fetch_doi_metadata(doi: str) -> tuple[str, str, list[dict]]:
 
     if not 200 <= response.status_code < 300:
         raise click.ClickException(
-            f"DOI error: metadata request returned HTTP {response.status_code} for '{doi}'."
+            "DOI error: metadata request returned "
+            f"HTTP {response.status_code} for '{doi}'."
         )
 
     try:
         data = response.json()
     except (requests.RequestException, ValueError) as e:
-        raise click.ClickException(f"DOI error: invalid JSON response for '{doi}'.") from e
+        raise click.ClickException(
+            f"DOI error: invalid JSON response for '{doi}'."
+        ) from e
 
     title = metadata_text(data.get("title")) if isinstance(data, dict) else None
     container = (
@@ -128,7 +193,12 @@ def fetch_doi_metadata(doi: str) -> tuple[str, str, list[dict]]:
         or not isinstance(authors, list)
         or not all(isinstance(author, dict) for author in authors)
     ):
-        raise click.ClickException(f"DOI error: incomplete metadata response for '{doi}'.")
+        fallback = fetch_datacite_metadata(doi)
+        if fallback is not None:
+            return fallback
+        raise click.ClickException(
+            f"DOI error: incomplete metadata response for '{doi}'."
+        )
 
     return title, container, authors
 

@@ -34,13 +34,13 @@ code. SQLite failures use the common `Error: Database error: ...` format.
 Initialize a new database:
 
 ```bash
-python ppubdb.py db-init --name publications.db
+python ppubdb.py db-init --db publications.db
 ```
 
 Add a publication from a DOI:
 
 ```bash
-python ppubdb.py doc-from-doi "10.0000/example-doi" ARTICLE --name publications.db
+python ppubdb.py doc-from-doi "10.0000/example-doi" ARTICLE --db publications.db
 ```
 
 The DOI may also be entered as `doi:10....` or as a `https://doi.org/...`
@@ -50,20 +50,20 @@ leaves the database unchanged if any insertion step fails.
 List all authors:
 
 ```bash
-python ppubdb.py auth-list --name publications.db
+python ppubdb.py auth-list --db publications.db
 ```
 
 List all documents:
 
 ```bash
-python ppubdb.py doc-list --name publications.db
+python ppubdb.py doc-list --db publications.db
 ```
 
 Export all documents with a specific tag to Markdown:
 
 ```bash
 python ppubdb.py doc-export-tag important \
-  --name publications.db \
+  --db publications.db \
   --output important.md
 ```
 
@@ -73,13 +73,13 @@ Remove orphaned relationship and identifier records, verify referential
 integrity, and compact the database file:
 
 ```bash
-python ppubdb.py db-prune --name publications.db
+python ppubdb.py db-prune --db publications.db
 ```
 
 Collapse duplicate author records into a preferred author record:
 
 ```bash
-python ppubdb.py auth-collapse 1 2 3 --name publications.db
+python ppubdb.py auth-collapse 1 2 3 --db publications.db
 ```
 
 In this example, document relationships and identifiers belonging to authors `2`
@@ -132,7 +132,7 @@ You can save the extracted DOIs to a text file and pass it directly to
 
 ```bash
 python -c 'import csv,sys; [print(row["DOI"]) for row in csv.DictReader(sys.stdin)]' < scopus.csv > dois.txt
-python ppubdb.py doc-from-doi dois.txt ARTICLE --name publications.db
+python ppubdb.py doc-from-doi dois.txt ARTICLE --db publications.db
 ```
 
 The first command reads the CSV file and writes one DOI per line. The second

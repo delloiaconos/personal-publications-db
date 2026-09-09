@@ -47,7 +47,7 @@ class DoiImportTests(unittest.TestCase):
                     "doc-from-doi",
                     " <https://doi.org/10.1234/ABC.1> ",
                     "ARTICLE",
-                    "--name",
+                    "--db",
                     str(self.db_path),
                 ],
             )
@@ -66,6 +66,109 @@ class DoiImportTests(unittest.TestCase):
                 dbcon.execute("SELECT FirstName, LastName FROM Authors").fetchone(),
                 ("Ada", "Lovelace"),
             )
+
+    @patch("ppubdb.requests.get")
+    def test_uses_datacite_when_primary_metadata_is_incomplete(self, request_get):
+        request_get.side_effect = [
+            self.response(
+                {
+                    "title": "Distributed Smart Measurement Architecture",
+                    "author": [{"given": "Wrong", "family": "Response"}],
+                }
+            ),
+            self.response(
+                {
+                    "data": {
+                        "attributes": {
+                            "titles": [
+                                {
+                                    "title": "Distributed Smart Measurement "
+                                    "Architecture for Industrial Automation"
+                                }
+                            ],
+                            "publisher": "arXiv",
+                            "container": {},
+                            "creators": [
+                                {
+                                    "name": "Azzoni, Paolo",
+                                    "givenName": "Paolo",
+                                    "familyName": "Azzoni",
+                                },
+                                {
+                                    "name": "Iacono, Salvatore Dello",
+                                    "givenName": "Salvatore Dello",
+                                    "familyName": "Iacono",
+                                },
+                            ],
+                        }
+                    }
+                }
+            ),
+        ]
+
+        result = self.runner.invoke(
+            ppdb,
+            [
+                "doc-from-doi",
+                "10.48550/arXiv.2107.14272",
+                "--db",
+                str(self.db_path),
+            ],
+        )
+
+        self.assertEqual(result.exit_code, 0, result.output)
+        self.assertEqual(
+            [call.args[0] for call in request_get.call_args_list],
+            [
+                "https://doi.org/10.48550/arXiv.2107.14272",
+                "https://api.datacite.org/dois/10.48550/arXiv.2107.14272",
+            ],
+        )
+        with sqlite3.connect(self.db_path) as dbcon:
+            self.assertEqual(
+                dbcon.execute(
+                    "SELECT Title, Container FROM Documents"
+                ).fetchone(),
+                (
+                    "Distributed Smart Measurement Architecture for "
+                    "Industrial Automation",
+                    "arXiv",
+                ),
+            )
+            self.assertEqual(
+                dbcon.execute(
+                    "SELECT a.FirstName, a.LastName "
+                    "FROM Authors AS a "
+                    "INNER JOIN DocumentAuthors AS da "
+                    "ON da.idAuthor = a.idAuthor "
+                    "ORDER BY da.AuthOrder"
+                ).fetchall(),
+                [("Paolo", "Azzoni"), ("Salvatore Dello", "Iacono")],
+            )
+
+    @patch("ppubdb.requests.get")
+    def test_reports_incomplete_metadata_after_datacite_fails(self, request_get):
+        request_get.side_effect = [
+            self.response({"title": "Only a title"}),
+            self.response({}, status_code=404),
+        ]
+
+        result = self.runner.invoke(
+            ppdb,
+            [
+                "doc-from-doi",
+                "10.1234/incomplete",
+                "--db",
+                str(self.db_path),
+            ],
+        )
+
+        self.assertNotEqual(result.exit_code, 0)
+        self.assertIn(
+            "DOI error: incomplete metadata response for '10.1234/incomplete'",
+            result.output,
+        )
+        self.assertEqual(request_get.call_count, 2)
 
     @patch("ppubdb.requests.get")
     def test_imports_all_dois_from_text_file(self, request_get):
@@ -97,7 +200,7 @@ class DoiImportTests(unittest.TestCase):
                 "doc-from-doi",
                 str(doi_file),
                 "ARTICLE",
-                "--name",
+                "--db",
                 str(self.db_path),
             ],
         )
@@ -136,7 +239,7 @@ class DoiImportTests(unittest.TestCase):
 
         result = self.runner.invoke(
             ppdb,
-            ["doc-from-doi", str(doi_file), "--name", str(self.db_path)],
+            ["doc-from-doi", str(doi_file), "--db", str(self.db_path)],
         )
 
         self.assertNotEqual(result.exit_code, 0)
@@ -167,7 +270,7 @@ class DoiImportTests(unittest.TestCase):
 
         result = self.runner.invoke(
             ppdb,
-            ["doc-from-doi", str(doi_file), "--name", str(self.db_path)],
+            ["doc-from-doi", str(doi_file), "--db", str(self.db_path)],
         )
 
         self.assertNotEqual(result.exit_code, 0)
@@ -181,11 +284,14 @@ class DoiImportTests(unittest.TestCase):
     def test_rejects_invalid_doi_before_network_request(self, request_get):
         result = self.runner.invoke(
             ppdb,
-            ["doc-from-doi", "not-a-doi", "--name", str(self.db_path)],
+            ["doc-from-doi", "not-a-doi", "--db", str(self.db_path)],
         )
 
         self.assertNotEqual(result.exit_code, 0)
-        self.assertIn("Error: DOI error: invalid DOI format.", result.output)
+        self.assertIn(
+            "Error: DOI error: invalid DOI format for 'not-a-doi'.",
+            result.output,
+        )
         request_get.assert_not_called()
 
     @patch("ppubdb.requests.get")
@@ -200,16 +306,16 @@ class DoiImportTests(unittest.TestCase):
         arguments = [
             "doc-from-doi",
             "doi:10.1234/duplicate",
-            "--name",
+            "--db",
             str(self.db_path),
         ]
         first = self.runner.invoke(ppdb, arguments)
         second = self.runner.invoke(ppdb, arguments)
 
         self.assertEqual(first.exit_code, 0, first.output)
-        self.assertNotEqual(second.exit_code, 0)
+        self.assertEqual(second.exit_code, 0, second.output)
         self.assertIn(
-            "Error: DOI error: 10.1234/duplicate is already present",
+            "DOI error: 10.1234/duplicate is already present",
             second.output,
         )
         with sqlite3.connect(self.db_path) as dbcon:
@@ -222,16 +328,20 @@ class DoiImportTests(unittest.TestCase):
         request_get.return_value = self.response({}, status_code=404)
         not_found = self.runner.invoke(
             ppdb,
-            ["doc-from-doi", "10.1234/missing", "--name", str(self.db_path)],
+            ["doc-from-doi", "10.1234/missing", "--db", str(self.db_path)],
         )
         self.assertIn("Error: DOI error: metadata request returned HTTP 404", not_found.output)
 
         request_get.return_value = self.response({"title": "Only a title"})
         incomplete = self.runner.invoke(
             ppdb,
-            ["doc-from-doi", "10.1234/incomplete", "--name", str(self.db_path)],
+            ["doc-from-doi", "10.1234/incomplete", "--db", str(self.db_path)],
         )
-        self.assertIn("Error: DOI error: incomplete metadata response.", incomplete.output)
+        self.assertIn(
+            "Error: DOI error: incomplete metadata response for "
+            "'10.1234/incomplete'.",
+            incomplete.output,
+        )
 
 
 if __name__ == "__main__":
