@@ -47,6 +47,7 @@ This project is in an early development stage. The current implementation provid
 
 - Create a new SQLite publication database.
 - Import a document from a DOI using DOI metadata.
+- Import multiple documents atomically from a text file containing one DOI per line.
 - Store documents, document identifiers, authors, author identifiers, and document-author relationships.
 - Preserve author order for each document.
 - List all authors in the local database.

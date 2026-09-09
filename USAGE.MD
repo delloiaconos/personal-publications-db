@@ -126,13 +126,16 @@ Scopus can export a full list of your publications. To keep the exported file cl
 python -c 'import csv,sys; [print(row["DOI"]) for row in csv.DictReader(sys.stdin)]' < scopus.csv
 ```
 
-You can also pass the extracted DOIs directly to `ppubdb.py`, adding each publication to the database through the `doc-from-doi` command.
+You can save the extracted DOIs to a text file and pass it directly to
+`doc-from-doi`. The file must contain one DOI per line; empty lines are ignored.
 
 
 ```bash
-python -c 'import csv,sys; [print(row["DOI"]) for row in csv.DictReader(sys.stdin)]' < scopus.csv | xargs -n 1 python ppubdb.py doc-from-doi
+python -c 'import csv,sys; [print(row["DOI"]) for row in csv.DictReader(sys.stdin)]' < scopus.csv > dois.txt
+python ppubdb.py doc-from-doi dois.txt ARTICLE --name publications.db
 ```
 
-Technically, the first part of the command reads the CSV file and prints one DOI per line. 
-The output is then piped to `xargs`, which takes each DOI and uses it as an argument for `python ppubdb.py doc-from-doi`. 
-The option `-n 1` tells `xargs` to execute the command once for each DOI.
+The first command reads the CSV file and writes one DOI per line. The second
+imports all those publications with the `ARTICLE` category. The batch is
+atomic: if one DOI cannot be processed, no publication from that invocation is
+added.

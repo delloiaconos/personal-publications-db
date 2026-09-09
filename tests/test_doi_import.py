@@ -5,6 +5,7 @@ from importlib.resources import files
 from pathlib import Path
 from unittest.mock import Mock, patch
 
+import requests
 from click.testing import CliRunner
 
 from ppubdb import ppdb
@@ -64,6 +65,116 @@ class DoiImportTests(unittest.TestCase):
             self.assertEqual(
                 dbcon.execute("SELECT FirstName, LastName FROM Authors").fetchone(),
                 ("Ada", "Lovelace"),
+            )
+
+    @patch("ppubdb.requests.get")
+    def test_imports_all_dois_from_text_file(self, request_get):
+        doi_file = Path(self.temp_dir.name) / "dois.txt"
+        doi_file.write_text(
+            "10.1234/first\n\nhttps://doi.org/10.1234/second\n",
+            encoding="utf-8",
+        )
+        request_get.side_effect = [
+            self.response(
+                {
+                    "title": "First publication",
+                    "container-title": "First journal",
+                    "author": [{"given": "Ada", "family": "Lovelace"}],
+                }
+            ),
+            self.response(
+                {
+                    "title": "Second publication",
+                    "container-title": "Second journal",
+                    "author": [{"given": "Grace", "family": "Hopper"}],
+                }
+            ),
+        ]
+
+        result = self.runner.invoke(
+            ppdb,
+            [
+                "doc-from-doi",
+                str(doi_file),
+                "ARTICLE",
+                "--name",
+                str(self.db_path),
+            ],
+        )
+
+        self.assertEqual(result.exit_code, 0, result.output)
+        self.assertEqual(result.output, "2 publications added successfully.\n")
+        self.assertEqual(
+            [call.args[0] for call in request_get.call_args_list],
+            [
+                "https://doi.org/10.1234/first",
+                "https://doi.org/10.1234/second",
+            ],
+        )
+        with sqlite3.connect(self.db_path) as dbcon:
+            self.assertEqual(
+                dbcon.execute(
+                    "SELECT di.DocumentIdentifier, d.Category "
+                    "FROM DocumentIdentifiers AS di "
+                    "INNER JOIN Documents AS d "
+                    "ON d.idDocument = di.idDocument "
+                    "ORDER BY d.idDocument"
+                ).fetchall(),
+                [
+                    ("10.1234/first", "ARTICLE"),
+                    ("10.1234/second", "ARTICLE"),
+                ],
+            )
+
+    @patch("ppubdb.requests.get")
+    def test_rejects_invalid_doi_file_before_importing_anything(self, request_get):
+        doi_file = Path(self.temp_dir.name) / "invalid-dois.txt"
+        doi_file.write_text(
+            "10.1234/valid\n\nnot-a-doi\n",
+            encoding="utf-8",
+        )
+
+        result = self.runner.invoke(
+            ppdb,
+            ["doc-from-doi", str(doi_file), "--name", str(self.db_path)],
+        )
+
+        self.assertNotEqual(result.exit_code, 0)
+        self.assertIn("DOI file error at line 3: invalid DOI format", result.output)
+        request_get.assert_not_called()
+        with sqlite3.connect(self.db_path) as dbcon:
+            self.assertEqual(
+                dbcon.execute("SELECT COUNT(*) FROM Documents").fetchone()[0], 0
+            )
+
+    @patch("ppubdb.requests.get")
+    def test_batch_import_rolls_back_if_one_doi_fails(self, request_get):
+        doi_file = Path(self.temp_dir.name) / "dois.txt"
+        doi_file.write_text(
+            "10.1234/first\n10.1234/failing\n",
+            encoding="utf-8",
+        )
+        request_get.side_effect = [
+            self.response(
+                {
+                    "title": "First publication",
+                    "container-title": "First journal",
+                    "author": [],
+                }
+            ),
+            requests.ConnectionError("service unavailable"),
+        ]
+
+        result = self.runner.invoke(
+            ppdb,
+            ["doc-from-doi", str(doi_file), "--name", str(self.db_path)],
+        )
+
+        self.assertNotEqual(result.exit_code, 0)
+        self.assertIn("DOI error: service unavailable", result.output)
+        with sqlite3.connect(self.db_path) as dbcon:
+            self.assertEqual(
+                dbcon.execute("SELECT COUNT(*) FROM Documents").fetchone()[0], 0
             )
 
     @patch("ppubdb.requests.get")

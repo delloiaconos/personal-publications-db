@@ -21,7 +21,7 @@ ppubdb [OPTIONS] COMMAND [ARGS]...
 - [category-list](#category-list): List all the documents categories.
 - [db-init](#db-init): Instantiate a new database.
 - [db-prune](#db-prune): Remove orphaned records and compact the database.
-- [doc-from-doi](#doc-from-doi): Add a document using its DOI.
+- [doc-from-doi](#doc-from-doi): Add documents using a DOI or a text file containing one DOI per line.
 - [doc-export-tag](#doc-export-tag): Export documents with a tag using a Jinja2 template.
 - [doc-list](#doc-list): List all the documents with their IDs.
 
@@ -116,12 +116,12 @@ ppubdb db-prune [OPTIONS]
 
 ## doc-from-doi
 
-Add a document using its DOI.
+Add documents using a DOI or a text file containing one DOI per line.
 
 **Usage:**
 
 ```text
-ppubdb doc-from-doi [OPTIONS] DOI [CATEGORY]
+ppubdb doc-from-doi [OPTIONS] DOI_OR_FILE [CATEGORY]
 ```
 
 **Options:**
@@ -130,6 +130,11 @@ ppubdb doc-from-doi [OPTIONS] DOI [CATEGORY]
   --name PATH  Database name.
   --help       Show this message and exit.
 ```
+
+When `DOI_OR_FILE` names an existing file, each non-empty line is normalized
+and imported as a DOI. `CATEGORY` is applied to every publication in the file.
+The batch is atomic: if validation, metadata retrieval, or insertion fails for
+one DOI, none of the publications from that invocation are added.
 
 ## doc-export-tag
 

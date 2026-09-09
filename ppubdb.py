@@ -65,6 +65,140 @@ def metadata_text(value):
     return None
 
 
+def read_doi_source(value: str) -> list[str]:
+    """Return normalized DOIs from a DOI value or a text file."""
+    source_path = Path(value)
+    if not source_path.is_file():
+        return [normalize_doi(value)]
+
+    try:
+        lines = source_path.read_text(encoding="utf-8-sig").splitlines()
+    except (OSError, UnicodeError) as e:
+        raise click.ClickException(f"DOI file error: {e}") from e
+
+    dois = []
+    for line_number, line in enumerate(lines, start=1):
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            dois.append(normalize_doi(line))
+        except click.ClickException as e:
+            raise click.ClickException(
+                f"DOI file error at line {line_number}: invalid DOI format."
+            ) from e
+
+    if not dois:
+        raise click.ClickException("DOI file error: the file contains no DOIs.")
+    return dois
+
+
+def fetch_doi_metadata(doi: str) -> tuple[str, str, list[dict]]:
+    """Fetch and validate CSL metadata for a normalized DOI."""
+    url = "https://doi.org/" + doi
+    headers = {
+        "Accept": "application/vnd.citationstyles.csl+json, application/json",
+        "User-Agent": "personal-publication-db/0.1 (+https://doi.org/)",
+    }
+    try:
+        response = requests.get(url, headers=headers, timeout=(5, 30))
+    except requests.RequestException as e:
+        raise click.ClickException(f"DOI error: {e}") from e
+
+    if not 200 <= response.status_code < 300:
+        raise click.ClickException(
+            f"DOI error: metadata request returned HTTP {response.status_code}."
+        )
+
+    try:
+        data = response.json()
+    except (requests.RequestException, ValueError) as e:
+        raise click.ClickException("DOI error: invalid JSON response.") from e
+
+    title = metadata_text(data.get("title")) if isinstance(data, dict) else None
+    container = (
+        metadata_text(data.get("container-title"))
+        if isinstance(data, dict)
+        else None
+    )
+    authors = data.get("author") if isinstance(data, dict) else None
+    if (
+        title is None
+        or container is None
+        or not isinstance(authors, list)
+        or not all(isinstance(author, dict) for author in authors)
+    ):
+        raise click.ClickException("DOI error: incomplete metadata response.")
+
+    return title, container, authors
+
+
+def insert_document_from_doi(
+    dbcon: sqlite3.Connection, doi: str, category: str
+) -> None:
+    """Fetch and insert one DOI using an existing database transaction."""
+    title, container, authors = fetch_doi_metadata(doi)
+    dbcur = dbcon.cursor()
+    existing = dbcur.execute(
+        "SELECT idDocument FROM DocumentIdentifiers "
+        "WHERE IdentifierType = 'DOI' AND DocumentIdentifier = ?",
+        (doi,),
+    ).fetchone()
+    if existing:
+        click.echo(
+            f"DOI error: {doi} is already present in the database."
+        )
+        return
+
+    dbcur.execute(
+        "INSERT INTO Documents (Title, Category, Container) VALUES (?, ?, ?)",
+        (title, category, container),
+    )
+
+    idDoc = dbcur.lastrowid
+    if not idDoc:
+        raise database_exception("Could not retrieve the new document ID.")
+    dbcur.execute(
+        "INSERT INTO DocumentIdentifiers "
+        "(idDocument, IdentifierType, DocumentIdentifier) "
+        "VALUES (?, 'DOI', ?)",
+        (idDoc, doi),
+    )
+
+    for order, author in enumerate(authors):
+        firstName = author.get("given", "")
+        lastName = author.get("family", "")
+        if not isinstance(firstName, str):
+            firstName = ""
+        if not isinstance(lastName, str):
+            lastName = ""
+        firstName = firstName.strip()
+        lastName = lastName.strip()
+        if not lastName and isinstance(author.get("literal"), str):
+            lastName = author["literal"].strip()
+
+        dbcur.execute(
+            "SELECT idAuthor FROM Authors "
+            "WHERE FirstName = ? AND LastName = ?",
+            (firstName, lastName),
+        )
+        idAuth = dbcur.fetchone()
+        if idAuth:
+            idAuth = idAuth[0]
+        else:
+            dbcur.execute(
+                "INSERT INTO Authors (FirstName, LastName) VALUES (?, ?)",
+                (firstName, lastName),
+            )
+            idAuth = dbcur.lastrowid
+
+        dbcur.execute(
+            "INSERT INTO DocumentAuthors "
+            "(idDocument, idAuthor, AuthOrder) VALUES (?, ?, ?)",
+            (idDoc, idAuth, order),
+        )
+
+
 def load_template(template_name: str) -> str:
     """Load a template from the current directory or packaged templates."""
     local_template = Path(template_name)
@@ -221,9 +355,10 @@ def dbi_prune(dbname):
 
 @ppdb.command(name='doc-from-doi')
 @click.argument(
-    'doi', 
+    'doi',
     nargs=1,
     type=click.STRING,
+    metavar="DOI_OR_FILE",
 )
 @click.argument(
     'category',
@@ -236,105 +371,19 @@ def dbi_prune(dbname):
     type=click.Path(exists=True),
     help="Database name.",
 )
-def doc_add_from_doi( doi:str, category:str, dbname:str):
-    """Add a document using its DOI."""
-    doi = normalize_doi(doi)
-    url = "https://doi.org/" + doi
-    headers = {
-        "Accept": "application/vnd.citationstyles.csl+json, application/json",
-        "User-Agent": "personal-publication-db/0.1 (+https://doi.org/)",
-    }
-    try:
-        response = requests.get(url, headers=headers, timeout=(5, 30))
-    except requests.RequestException as e:
-        raise click.ClickException(f"DOI error: {e}") from e
-
-    if not 200 <= response.status_code < 300:
-        raise click.ClickException(
-            f"DOI error: metadata request returned HTTP {response.status_code}."
-        )
-
-    try:
-        data = response.json()
-    except (requests.RequestException, ValueError) as e:
-        raise click.ClickException("DOI error: invalid JSON response.") from e
-
-    title = metadata_text(data.get("title")) if isinstance(data, dict) else None
-    container = (
-        metadata_text(data.get("container-title"))
-        if isinstance(data, dict)
-        else None
-    )
-    authors = data.get("author") if isinstance(data, dict) else None
-    if (
-        title is None
-        or container is None
-        or not isinstance(authors, list)
-        or not all(isinstance(author, dict) for author in authors)
-    ):
-        raise click.ClickException("DOI error: incomplete metadata response.")
+def doc_add_from_doi(doi: str, category: str, dbname: str):
+    """Add documents using a DOI or a text file containing one DOI per line."""
+    dois = read_doi_source(doi)
+    category = category.strip() or "DOCUMENT"
 
     with database_connection(dbname) as dbcon:
-        dbcur = dbcon.cursor()
-        existing = dbcur.execute(
-            "SELECT idDocument FROM DocumentIdentifiers "
-            "WHERE IdentifierType = 'DOI' AND DocumentIdentifier = ?",
-            (doi,),
-        ).fetchone()
-        if existing:
-            raise click.ClickException(
-                f"DOI error: {doi} is already present in the database."
-            )
+        for normalized_doi in dois:
+            insert_document_from_doi(dbcon, normalized_doi, category)
 
-        dbcur.execute(
-            "INSERT INTO Documents (Title, Category, Container) VALUES (?, ?, ?)",
-            (title, category.strip() or "DOCUMENT", container),
-        )
-
-        idDoc = dbcur.lastrowid
-        if not idDoc:
-            raise database_exception("Could not retrieve the new document ID.")
-        dbcur.execute(
-            "INSERT INTO DocumentIdentifiers "
-            "(idDocument, IdentifierType, DocumentIdentifier) "
-            "VALUES (?, 'DOI', ?)",
-            (idDoc, doi),
-        )
-
-        for order, author in enumerate(authors):
-            firstName = author.get("given", "")
-            lastName = author.get("family", "")
-            if not isinstance(firstName, str):
-                firstName = ""
-            if not isinstance(lastName, str):
-                lastName = ""
-            firstName = firstName.strip()
-            lastName = lastName.strip()
-            if not lastName and isinstance(author.get("literal"), str):
-                lastName = author["literal"].strip()
-
-            dbcur.execute(
-                "SELECT idAuthor FROM Authors "
-                "WHERE FirstName = ? AND LastName = ?",
-                (firstName, lastName),
-            )
-            idAuth = dbcur.fetchone()
-            if idAuth:
-                idAuth = idAuth[0]
-            else:
-                dbcur.execute(
-                    "INSERT INTO Authors (FirstName, LastName) VALUES (?, ?)",
-                    (firstName, lastName),
-                )
-                idAuth = dbcur.lastrowid
-
-            dbcur.execute(
-                "INSERT INTO DocumentAuthors "
-                "(idDocument, idAuthor, AuthOrder) VALUES (?, ?, ?)",
-                (idDoc, idAuth, order),
-            )
-
-    click.echo("Publication added successfully.")
+    if len(dois) == 1:
+        click.echo("Publication added successfully.")
+    else:
+        click.echo(f"{len(dois)} publications added successfully.")
 
 @ppdb.command(name='auth-collapse')
 @click.argument(
