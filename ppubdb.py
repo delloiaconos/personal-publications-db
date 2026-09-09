@@ -50,7 +50,7 @@ def normalize_doi(value: str) -> str:
     )
     doi = doi.strip()
     if not DOI_PATTERN.fullmatch(doi):
-        raise click.ClickException("DOI error: invalid DOI format.")
+        raise click.ClickException(f"DOI error: invalid DOI format for '{doi}'.")
     return doi
 
 
@@ -103,17 +103,17 @@ def fetch_doi_metadata(doi: str) -> tuple[str, str, list[dict]]:
     try:
         response = requests.get(url, headers=headers, timeout=(5, 30))
     except requests.RequestException as e:
-        raise click.ClickException(f"DOI error: {e}") from e
+        raise click.ClickException(f"DOI error: {e} for '{doi}'") from e
 
     if not 200 <= response.status_code < 300:
         raise click.ClickException(
-            f"DOI error: metadata request returned HTTP {response.status_code}."
+            f"DOI error: metadata request returned HTTP {response.status_code} for '{doi}'."
         )
 
     try:
         data = response.json()
     except (requests.RequestException, ValueError) as e:
-        raise click.ClickException("DOI error: invalid JSON response.") from e
+        raise click.ClickException(f"DOI error: invalid JSON response for '{doi}'.") from e
 
     title = metadata_text(data.get("title")) if isinstance(data, dict) else None
     container = (
@@ -128,7 +128,7 @@ def fetch_doi_metadata(doi: str) -> tuple[str, str, list[dict]]:
         or not isinstance(authors, list)
         or not all(isinstance(author, dict) for author in authors)
     ):
-        raise click.ClickException("DOI error: incomplete metadata response.")
+        raise click.ClickException(f"DOI error: incomplete metadata response for '{doi}'.")
 
     return title, container, authors
 
